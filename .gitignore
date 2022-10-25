@@ -1,0 +1,7 @@
+/dataset
+*.idea*
+/figures
+/trained_models
+/results
+/checkpoint
+*__pycache__*
