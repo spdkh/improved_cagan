@@ -7,7 +7,7 @@ import random
 
 import argparse
 
-from utils import check_folder
+from fcns import check_folder
 
 
 def check_args(args):
@@ -39,7 +39,7 @@ def parse_args():
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--gan_type', type=str, default='CGAN',
+    parser.add_argument('--dnn_type', type=str, default='CGAN',
                         choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN'],
                         help='The type of GAN', required=False)
     parser.add_argument("--data_dir", type=str, default="D:/Data/datasets_luhong/cropped128",

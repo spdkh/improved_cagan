@@ -1,19 +1,14 @@
 #-*- coding: utf-8 -*-
 from __future__ import division
-import os
 import time
-import tensorflow as tf
-import numpy as np
 
-from ops import *
-from utils import *
+from utils.fcns import *
 
 
 class CGAN(object):
     model_name = "CGAN"     # name for checkpoint
 
-    def __init__(self, sess, epoch, batch_size, z_dim, dataset_name, checkpoint_dir, result_dir, log_dir):
-        self.sess = sess
+    def __init__(self, epoch, batch_size, z_dim, dataset_name, checkpoint_dir, result_dir, log_dir):
         self.dataset_name = dataset_name
         self.checkpoint_dir = checkpoint_dir
         self.result_dir = result_dir

@@ -1,56 +1,51 @@
-import os
+"""
+    author: SPDKH
+    date: Nov 2, 2022
+"""
 
-## GAN Variants
-from CGAN import CGAN
 
-from utils import show_all_variables
-from config import parse_args
+import sys
 
 import tensorflow as tf
 
+# ________________ architecture Variants
+from models import CGAN, CAGAN
+
+from utils.fcns import show_all_variables
+from utils.config import parse_args
+
 
 def main():
-    """main"""
+    """
+        Main Training Function
+    """
 
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
     # parse arguments
     args = parse_args()
     if args is None:
-        exit()
+        sys.exit()
 
     # open session
-    models = [CGAN]
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        # declare instance for GAN
+    model_fns = {'CAGAN': CAGAN, 'CGAN': CGAN}
 
-        gan = None
-        for model in models:
-            if args.gan_type == model.model_name:
-                gan = model(sess,
-                            epoch=args.epoch,
-                            batch_size=args.batch_size,
-                            z_dim=args.z_dim,
-                            dataset_name=args.dataset,
-                            checkpoint_dir=args.checkpoint_dir,
-                            result_dir=args.result_dir,
-                            log_dir=args.log_dir)
-        if gan is None:
-            raise Exception("[!] There is no option for " + args.gan_type)
+    # declare instance for GAN
+    dnn = model_fns[args.dnn_type](args)
 
-        # build graph
-        gan.build_model()
+    # build graph
+    dnn.build_model()
 
-        # show network architecture
-        show_all_variables()
+    # show network architecture
+    show_all_variables()
 
-        # launch the graph in a session
-        gan.train()
-        print(" [*] Training finished!")
+    # launch the graph in a session
+    dnn.train()
+    print(" [*] Training finished!")
 
-        # visualize learned generator
-        gan.visualize_results(args.epoch-1)
-        print(" [*] Validation finished!")
+    # visualize learned generator
+    dnn.visualize_results(args.epoch-1)
+    print(" [*] Validation finished!")
 
 
 if __name__ == '__main__':
