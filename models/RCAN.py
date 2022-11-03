@@ -4,9 +4,9 @@ todo: write
 """
 
 
-import GAN, RCAN
+import GAN
 
 
-class CAGAN(GAN):
+class RCAN(GAN):
     def __init__(self, args):
         GAN.__init__(self, args)

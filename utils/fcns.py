@@ -2,6 +2,7 @@
     caGAN project functions
 
 Most codes from https://github.com/carpedm20/DCGAN-tensorflow
+todo: revise
 """
 from __future__ import division
 

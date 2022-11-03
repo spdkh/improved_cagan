@@ -1,11 +1,10 @@
 """
     caGAN project data loader
+    todo: revise
 """
 import os.path
 
 import numpy as np
-import cv2 as cv
-import imageio
 import tifffile as tiff
 from skimage.measure import block_reduce
 from matplotlib import pyplot as plt
@@ -146,6 +145,6 @@ def data_loader_multi_channel_3d_wf(images_path, data_path, wf_path, gt_path, ny
 
 def load_sample(dir):
     """
-    todo: complete
+    todo: convert any type of data to [x, y, z, ch] then return dimension
     """
     return 0

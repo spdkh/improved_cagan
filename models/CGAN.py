@@ -1,4 +1,7 @@
 #-*- coding: utf-8 -*-
+"""
+    CGAN
+"""
 from __future__ import division
 import time
 

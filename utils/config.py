@@ -2,6 +2,7 @@
     author: Parisa Daj
     date: May 10, 2022
     parsing and configuration
+    todo: revise
 """
 import random
 
