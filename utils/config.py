@@ -37,6 +37,12 @@ def check_args(args):
 
 
 def parse_args():
+    """
+        Define terminal input arguments
+    Returns
+    -------
+    arguments
+    """
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 

@@ -1,7 +1,4 @@
 #-*- coding: utf-8 -*-
-"""
-    CGAN
-"""
 from __future__ import division
 import time
 
@@ -11,7 +8,8 @@ from utils.fcns import *
 class CGAN(object):
     model_name = "CGAN"     # name for checkpoint
 
-    def __init__(self, epoch, batch_size, z_dim, dataset_name, checkpoint_dir, result_dir, log_dir):
+    def __init__(self, sess, epoch, batch_size, z_dim, dataset_name, checkpoint_dir, result_dir, log_dir):
+        self.sess = sess
         self.dataset_name = dataset_name
         self.checkpoint_dir = checkpoint_dir
         self.result_dir = result_dir
@@ -147,9 +145,6 @@ class CGAN(object):
         self.d_sum = tf.summary.merge([d_loss_real_sum, d_loss_sum])
 
     def train(self):
-
-        # initialize all variables
-        tf.global_variables_initializer().run()
 
         # graph inputs for visualize training results
         self.sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
