@@ -1,4 +1,5 @@
 """
+    author: SPDKH
     todo: complete
 """
 # -*- coding: utf-8 -*-
@@ -10,6 +11,9 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
+
 import matplotlib.pyplot as plt
 from utils.data_loader import load_sample, data_loader
 
@@ -19,17 +23,20 @@ class DNN(ABC):
         Abstract class for DNN architectures
     """
 
-    def __init__(self, model, args):
+    def __init__(self, args):
         """
-            todo: what other info needed from load_sample
+            todo: what other info needed from load_sample?
             todo: write load_sample
-            todo: figure out what is z_dim
+            todo: figure out what is z_dim in CGAN
         """
-        self.model = model
+        self.model = Model()
         self.args = args
 
         self.input_dim = load_sample(self.args.dataset_dir)
         self.output_dim = [self.input_dim[:1] * self.args.scale, self.input_dim[2:]]
+
+        self.input = Input(self.input_dim)
+        self.optimizer =
 
     @abstractmethod
     def build_model(self):
@@ -77,13 +84,11 @@ class DNN(ABC):
 
         if sample == 0:
             # if best, save weights.best
-            g.save_weights(save_weights_path + 'weights_latest.h5')
-            d.save_weights(save_weights_path + 'weights_disc_latest.h5')
+            self.model.save_weights(save_weights_path + 'weights_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                g.save_weights(save_weights_path + 'weights_best.h5')
-                print(g.summary)
-                d.save_weights(save_weights_path + 'weights_disc_best.h5')
+                self.model.save_weights(save_weights_path + 'weights_best.h5')
+                print(self.model.summary)
 
             validate_nrmse.append(np.mean(nrmses))
             curlr_g = lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
