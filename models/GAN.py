@@ -3,8 +3,9 @@
 todo: complete
 """
 
+from abc import abstractmethod
 
-import DNN
+from DNN import DNN
 
 
 class GAN(DNN):
@@ -13,7 +14,7 @@ class GAN(DNN):
     """
 
     def __init__(self, args):
-        DNN.__init__(self, args)
+        super(GAN, self).__init__(args)
 
     @abstractmethod
     def discriminator(self, x, is_training=True, reuse=False):

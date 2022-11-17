@@ -3,14 +3,16 @@
 """
 # -*- coding: utf-8 -*-
 from __future__ import division
-import os
+
 import glob
+import os
 import re
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+
 from utils.data_loader import load_sample, data_loader
 
 
