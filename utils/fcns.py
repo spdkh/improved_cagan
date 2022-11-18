@@ -6,24 +6,20 @@ todo: revise
 """
 from __future__ import division
 
-import scipy.misc
-import imageio
-
-import matplotlib.pyplot as plt
 import os
 
+import imageio
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.misc
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-
 from keras.datasets import mnist
-
-import numpy as np
 from sewar.full_ref import uqi
 from skimage.metrics import mean_squared_error as compare_mse, \
     normalized_root_mse as compare_nrmse, \
     peak_signal_noise_ratio as compare_psnr, \
     structural_similarity as compare_ssim
-
 
 
 def load_data(dataset_name):
@@ -192,7 +188,7 @@ def prctile_norm(x_in, min_prc=0, max_prc=100):
     :return: output
     """
     output = (x_in - np.percentile(x_in, min_prc)) / (np.percentile(x_in, max_prc)
-                                           - np.percentile(x_in, min_prc) + 1e-7)
+                                                      - np.percentile(x_in, min_prc) + 1e-7)
     output[output > 1] = 1
     output[output < 0] = 0
     return output

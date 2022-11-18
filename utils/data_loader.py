@@ -6,8 +6,9 @@ import os.path
 
 import numpy as np
 import tifffile as tiff
-from skimage.measure import block_reduce
 from matplotlib import pyplot as plt
+from skimage.measure import block_reduce
+
 from utils.fcns import prctile_norm, fix_path, reorder
 
 
@@ -15,10 +16,10 @@ def data_loader(images_path, data_path, gt_path, ny, nx, nz,
                 batch_size, norm_flag=1, scale=2, wf_weight=0, wf_path=None):
     if wf_weight == 0:
         return data_loader_multi_channel_3d(images_path, data_path, gt_path, ny, nx, nz,
-                                     batch_size, norm_flag, scale)
+                                            batch_size, norm_flag, scale)
     else:
         return data_loader_multi_channel_3d_wf(images_path, data_path, wf_path, gt_path, ny, nx, nz,
-                                        batch_size, norm_flag, scale)
+                                               batch_size, norm_flag, scale)
 
 
 def data_loader_multi_channel_3d(images_path, data_path, gt_path, ny, nx, nz,
@@ -60,9 +61,9 @@ def data_loader_multi_channel_3d(images_path, data_path, gt_path, ny, nx, nz,
     image_batch = np.array(image_batch)
     gt_batch = np.array(gt_batch)
     nslice = image_batch.shape[1]
-    image_batch = np.reshape(image_batch, (batch_size, nslice//nz, nz, ny, nx),
+    image_batch = np.reshape(image_batch, (batch_size, nslice // nz, nz, ny, nx),
                              order='F').transpose((0, 3, 4, 2, 1))
-    gt_batch = gt_batch.reshape((batch_size, nz, ny*scale, nx*scale, 1),
+    gt_batch = gt_batch.reshape((batch_size, nz, ny * scale, nx * scale, 1),
                                 order='F').transpose((0, 2, 3, 1, 4))
 
     if wf == 1:
@@ -93,7 +94,6 @@ def data_loader_multi_channel_3d_wf(images_path, data_path, wf_path, gt_path, ny
         cur_wf = reorder(cur_img)
         cur_wf = block_reduce(cur_wf, block_size=(nchannels, 1, 1),
                               func=np.mean, cval=np.mean(cur_wf))
-
 
         wf_shape = np.shape(cur_wf)
 
@@ -126,12 +126,12 @@ def data_loader_multi_channel_3d_wf(images_path, data_path, wf_path, gt_path, ny
     wf_batch = np.array(wf_batch)
     gt_batch = np.array(gt_batch)
 
-    image_batch = np.reshape(image_batch, (batch_size, nslice//nz, nz, ny, nx),
+    image_batch = np.reshape(image_batch, (batch_size, nslice // nz, nz, ny, nx),
                              order='F').transpose((0, 3, 4, 2, 1))
     wf_batch = wf_batch.reshape((batch_size, nz, ny, nx, 1),
                                 order='F').transpose((0, 2, 3, 1, 4))
 
-    gt_batch = gt_batch.reshape((batch_size, nz, ny*scale, nx*scale, 1),
+    gt_batch = gt_batch.reshape((batch_size, nz, ny * scale, nx * scale, 1),
                                 order='F').transpose((0, 2, 3, 1, 4))
 
     if wf == 1:

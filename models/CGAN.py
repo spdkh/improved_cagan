@@ -1,12 +1,13 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import division
+
 import time
 
 from utils.fcns import *
 
 
 class CGAN(object):
-    model_name = "CGAN"     # name for checkpoint
+    model_name = "CGAN"  # name for checkpoint
 
     def __init__(self, sess, epoch, batch_size, z_dim, dataset_name, checkpoint_dir, result_dir, log_dir):
         self.sess = sess
@@ -24,8 +25,8 @@ class CGAN(object):
             self.output_height = 28
             self.output_width = 28
 
-            self.z_dim = z_dim         # dimension of noise-vector
-            self.y_dim = 10         # dimension of condition-vector (label)
+            self.z_dim = z_dim  # dimension of noise-vector
+            self.y_dim = 10  # dimension of condition-vector (label)
             self.c_dim = 1
 
             # train
@@ -43,12 +44,10 @@ class CGAN(object):
         else:
             raise NotImplementedError
 
-
     def discriminator(self, x, y, is_training=True, reuse=False):
         # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
         # Architecture : (64)4c2s-(128)4c2s_BL-FC1024_BL-FC1_S
         with tf.variable_scope("discriminator", reuse=reuse):
-
             # merge image and label
             y = tf.reshape(y, [self.batch_size, 1, 1, self.y_dim])
             x = conv_cond_concat(x, y)
@@ -66,7 +65,6 @@ class CGAN(object):
         # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
         # Architecture : FC1024_BR-FC7x7x128_BR-(64)4dc2s_BR-(1)4dc2s_S
         with tf.variable_scope("generator", reuse=reuse):
-
             # merge noise and label
             z = concat([z, y], 1)
 
@@ -126,9 +124,9 @@ class CGAN(object):
         # optimizers
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             self.d_optim = tf.train.AdamOptimizer(self.learning_rate, beta1=self.beta1) \
-                      .minimize(self.d_loss, var_list=d_vars)
-            self.g_optim = tf.train.AdamOptimizer(self.learning_rate*5, beta1=self.beta1) \
-                      .minimize(self.g_loss, var_list=g_vars)
+                .minimize(self.d_loss, var_list=d_vars)
+            self.g_optim = tf.train.AdamOptimizer(self.learning_rate * 5, beta1=self.beta1) \
+                .minimize(self.g_loss, var_list=g_vars)
 
         """" Testing """
         # for test
@@ -147,7 +145,7 @@ class CGAN(object):
     def train(self):
 
         # graph inputs for visualize training results
-        self.sample_z = np.random.uniform(-1, 1, size=(self.batch_size , self.z_dim))
+        self.sample_z = np.random.uniform(-1, 1, size=(self.batch_size, self.z_dim))
         self.test_labels = self.data_y[0:self.batch_size]
 
         # saver to save model
@@ -175,7 +173,7 @@ class CGAN(object):
 
             # get batch data
             for idx in range(start_batch_id, self.num_batches):
-                batch_images = self.data_X[idx*self.batch_size:(idx+1)*self.batch_size]
+                batch_images = self.data_X[idx * self.batch_size:(idx + 1) * self.batch_size]
                 batch_labels = self.data_y[idx * self.batch_size:(idx + 1) * self.batch_size]
                 batch_z = np.random.uniform(-1, 1, [self.batch_size, self.z_dim]).astype(np.float32)
 
@@ -203,7 +201,8 @@ class CGAN(object):
                     manifold_h = int(np.floor(np.sqrt(tot_num_samples)))
                     manifold_w = int(np.floor(np.sqrt(tot_num_samples)))
                     save_images(samples[:manifold_h * manifold_w, :, :, :], [manifold_h, manifold_w],
-                                './' + check_folder(self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_train_{:02d}_{:04d}.png'.format(
+                                './' + check_folder(
+                                    self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_train_{:02d}_{:04d}.png'.format(
                                     epoch, idx))
 
             # After an epoch, start_batch_id is set to zero
@@ -233,7 +232,8 @@ class CGAN(object):
         samples = self.sess.run(self.fake_images, feed_dict={self.z: z_sample, self.y: y_one_hot})
 
         save_images(samples[:image_frame_dim * image_frame_dim, :, :, :], [image_frame_dim, image_frame_dim],
-                    check_folder(self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_epoch%03d' % epoch + '_test_all_classes.png')
+                    check_folder(
+                        self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_epoch%03d' % epoch + '_test_all_classes.png')
 
         """ specified condition, random noise """
         n_styles = 10  # must be less than or equal to self.batch_size
@@ -248,7 +248,9 @@ class CGAN(object):
 
             samples = self.sess.run(self.fake_images, feed_dict={self.z: z_sample, self.y: y_one_hot})
             save_images(samples[:image_frame_dim * image_frame_dim, :, :, :], [image_frame_dim, image_frame_dim],
-                        check_folder(self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_epoch%03d' % epoch + '_test_class_%d.png' % l)
+                        check_folder(
+                            self.result_dir + '/' + self.model_dir) + '/' + self.model_name
+                        + '_epoch%03d' % epoch + '_test_class_%d.png' % l)
 
             samples = samples[si, :, :, :]
 
@@ -264,7 +266,8 @@ class CGAN(object):
                 canvas[s * self.y_dim + c, :, :, :] = all_samples[c * n_styles + s, :, :, :]
 
         save_images(canvas, [n_styles, self.y_dim],
-                    check_folder(self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_epoch%03d' % epoch + '_test_all_classes_style_by_style.png')
+                    check_folder(
+                        self.result_dir + '/' + self.model_dir) + '/' + self.model_name + '_epoch%03d' % epoch + '_test_all_classes_style_by_style.png')
 
     @property
     def model_dir(self):
@@ -278,7 +281,7 @@ class CGAN(object):
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
-        self.saver.save(self.sess,os.path.join(checkpoint_dir, self.model_name+'.model'), global_step=step)
+        self.saver.save(self.sess, os.path.join(checkpoint_dir, self.model_name + '.model'), global_step=step)
 
     def load(self, checkpoint_dir):
         import re
@@ -289,7 +292,7 @@ class CGAN(object):
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
             self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-            counter = int(next(re.finditer("(\d+)(?!.*\d)",ckpt_name)).group(0))
+            counter = int(next(re.finditer("(\d+)(?!.*\d)", ckpt_name)).group(0))
             print(" [*] Success to read {}".format(ckpt_name))
             return True, counter
         else:

@@ -4,7 +4,8 @@ todo: write
 """
 
 
-import GAN, RCAN
+from GAN import GAN
+from RCAN import RCAN
 
 
 class CAGAN(GAN):

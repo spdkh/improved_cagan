@@ -4,9 +4,8 @@
     parsing and configuration
     todo: revise
 """
-import random
-
 import argparse
+import random
 
 from fcns import check_folder
 

@@ -3,14 +3,16 @@
 """
 # -*- coding: utf-8 -*-
 from __future__ import division
-import os
+
 import glob
+import os
 import re
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+
 from utils.data_loader import load_sample, data_loader
 
 
@@ -129,7 +131,7 @@ class DNN(ABC):
 
     @property
     def model_dir(self):
-        return "{}_{}_{}_{}".format(
+        return "{}_{}_{}".format(
             self.args.dnn_type, self.args.dataset_name,
             self.args.batch_size)
 

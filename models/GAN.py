@@ -3,8 +3,9 @@
 todo: complete
 """
 
+from abc import abstractmethod
 
-import DNN
+from DNN import DNN
 
 
 class GAN(DNN):
@@ -12,8 +13,8 @@ class GAN(DNN):
         Abstract class for any GAN architecture
     """
 
-    def __init__(self, args):
-        DNN.__init__(self, args)
+    def __init__(self, model, args):
+        super(GAN, self).__init__(model, args)
 
     @abstractmethod
     def discriminator(self, x, is_training=True, reuse=False):
