@@ -131,7 +131,7 @@ class DNN(ABC):
 
     @property
     def model_dir(self):
-        return "{}_{}_{}_{}".format(
+        return "{}_{}_{}".format(
             self.args.dnn_type, self.args.dataset_name,
             self.args.batch_size)
 

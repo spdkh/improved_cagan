@@ -13,8 +13,8 @@ class GAN(DNN):
         Abstract class for any GAN architecture
     """
 
-    def __init__(self, args):
-        super(GAN, self).__init__(args)
+    def __init__(self, model, args):
+        super(GAN, self).__init__(model, args)
 
     @abstractmethod
     def discriminator(self, x, is_training=True, reuse=False):
