@@ -34,10 +34,14 @@ from DNN import DNN
 
 
 class RCAN(DNN, ABC):
-
     def __init__(self, model, args):
         super(RCAN, self).__init__(model, args)
-        self.input_shape = (args.patch_y, args.patch_x, args.patch_z, args.input_channels)
+        self.input_shape = (
+            args.patch_y,
+            args.patch_x,
+            args.patch_z,
+            args.input_channels,
+        )
         self.n_ResGroup = args.n_ResGroup
         self.n_RCAB = args.n_RCAB
 
@@ -48,8 +52,10 @@ class RCAN(DNN, ABC):
     @staticmethod
     def CALayer(X, channel, reduction=16):
         W = Lambda(RCAN.GlobalAveragePooling3d)(X)
-        W = Conv3D(channel // reduction, kernel_size=1, activation='relu', padding='same')(W)
-        W = Conv3D(channel, kernel_size=1, activation='sigmoid', padding='same')(W)
+        W = Conv3D(
+            channel // reduction, kernel_size=1, activation="relu", padding="same"
+        )(W)
+        W = Conv3D(channel, kernel_size=1, activation="sigmoid", padding="same")(W)
         mul = multiply([X, W])
         return mul
 
@@ -57,7 +63,7 @@ class RCAN(DNN, ABC):
     def RCAB(X, channel):
         conv = X
         for _ in range(2):
-            conv = Conv3D(channel, kernel_size=3, padding='same')(conv)
+            conv = Conv3D(channel, kernel_size=3, padding="same")(conv)
             conv = LeakyReLU(alpha=0.2)(conv)
         att = RCAN.CALayer(conv, channel, reduction=16)
         output = add([att, X])
@@ -79,15 +85,15 @@ class RCAN(DNN, ABC):
         :rtype: Model
         """
         inputs = Input(self.input_shape)
-        conv = Conv3D(channel, kernel_size=3, padding='same')(inputs)
+        conv = Conv3D(channel, kernel_size=3, padding="same")(inputs)
 
         for _ in range(self.n_ResGroup):
             conv = RCAN.ResidualGroup(conv, channel=channel, n_RCAB=self.n_RCAB)
 
         up = UpSampling3D(size=(2, 2, 1))(conv)
-        conv = Conv3D(channel, kernel_size=3, padding='same')(up)
+        conv = Conv3D(channel, kernel_size=3, padding="same")(up)
         conv = LeakyReLU(alpha=0.2)(conv)
-        conv = Conv3D(1, kernel_size=3, padding='same')(conv)
+        conv = Conv3D(1, kernel_size=3, padding="same")(conv)
         output = LeakyReLU(alpha=0.2)(conv)
 
         model = Model(inputs=inputs, outputs=output)
