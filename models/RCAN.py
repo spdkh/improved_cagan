@@ -34,6 +34,11 @@ from DNN import DNN
 
 
 class RCAN(DNN, ABC):
+    """
+    todo: check the parameters from the paper
+    todo: make important parameters variable
+    """
+
     def __init__(self, model, args):
         super(RCAN, self).__init__(model, args)
         self.input_shape = (
@@ -55,7 +60,8 @@ class RCAN(DNN, ABC):
         W = Conv3D(
             channel // reduction, kernel_size=1, activation="relu", padding="same"
         )(W)
-        W = Conv3D(channel, kernel_size=1, activation="sigmoid", padding="same")(W)
+        W = Conv3D(channel, kernel_size=1,
+                   activation="sigmoid", padding="same")(W)
         mul = multiply([X, W])
         return mul
 
@@ -88,7 +94,8 @@ class RCAN(DNN, ABC):
         conv = Conv3D(channel, kernel_size=3, padding="same")(inputs)
 
         for _ in range(self.n_ResGroup):
-            conv = RCAN.ResidualGroup(conv, channel=channel, n_RCAB=self.n_RCAB)
+            conv = RCAN.ResidualGroup(
+                conv, channel=channel, n_RCAB=self.n_RCAB)
 
         up = UpSampling3D(size=(2, 2, 1))(conv)
         conv = Conv3D(channel, kernel_size=3, padding="same")(up)

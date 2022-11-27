@@ -7,12 +7,14 @@
 import sys
 
 import tensorflow as tf
+from tensorflow.keras.models import Model
 
 # ________________ architecture Variants
 from models import CGAN, CAGAN
 
 from utils.fcns import show_all_variables
 from utils.config import parse_args
+from utils.data_loader import data_loader
 
 
 def main():
@@ -30,6 +32,7 @@ def main():
     # open session
     model_fns = {'CAGAN': CAGAN, 'CGAN': CGAN}
 
+    data = data_loader()
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
 
