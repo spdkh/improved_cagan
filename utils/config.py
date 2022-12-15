@@ -8,7 +8,7 @@ import random
 
 import argparse
 
-from fcns import check_folder
+from utils.fcns import check_folder
 
 
 def check_args(args):
@@ -46,10 +46,10 @@ def parse_args():
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--dnn_type', type=str, default='CGAN',
+    parser.add_argument('--dnn_type', type=str, default='CAGAN',
                         choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN'],
                         help='The type of GAN', required=False)
-    parser.add_argument("--data_dir", type=str, default="D:/Data/datasets_luhong/cropped128",
+    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
                         help='The directory of the data')
     # parser.add_argument('--patch_dim', nargs='+', default=[128, 128, 1, 15],
     #                     help='Dimension of the patches followed by number of channels')
@@ -83,5 +83,7 @@ def parse_args():
     parser.add_argument("--n_ResGroup", type=int, default=2)
     parser.add_argument("--n_RCAB", type=int, default=3)
 
+    parser.add_argument("--n_phases", type=int, default=5)
+    parser.add_argument("--n_angles", type=int, default=3)
     random.seed(10)
     return check_args(parser.parse_args())

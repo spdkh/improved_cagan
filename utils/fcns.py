@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 import os
 
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
-
-from keras.datasets import mnist
+# import tensorflow.contrib.slim as slim
+#
+# from keras.datasets import mnist
 
 import numpy as np
 from sewar.full_ref import uqi
@@ -249,7 +249,7 @@ def fix_path(path):
     :param path:
     :return:
     """
-    return path.replace('\\', '/')
+    return path.replace('/', '\\')
 
 
 def diffxy(img, order=3):

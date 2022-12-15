@@ -15,7 +15,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
 
 import matplotlib.pyplot as plt
-from utils.data_loader import load_sample, data_loader
+
+from data.data import Data
+from utils.data_loader import data_loader
 
 
 class DNN(ABC):
@@ -28,15 +30,18 @@ class DNN(ABC):
             todo: what other info needed from load_sample?
             todo: write load_sample
             todo: figure out what is z_dim in CGAN
+            todo: fix optimizer
         """
         self.model = Model()
         self.args = args
 
-        self.input_dim = load_sample(self.args.dataset_dir)
-        self.output_dim = [self.input_dim[:1] * self.args.scale, self.input_dim[2:]]
+        self.data = Data(self.args)
 
-        self.input = Input(self.input_dim)
-        self.optimizer =
+        self.optimizer = self.args.g_opt
+
+        data_name = self.args.data_dir.split('/')[-1]
+
+        super().__init__()
 
     @abstractmethod
     def build_model(self):
@@ -63,6 +68,16 @@ class DNN(ABC):
             validate_path = np.random.choice(validate_path, size=1)
         elif self.args.validate_num < validate_path.__len__():
             validate_path = validate_path[0:self.args.validate_num]
+
+        # save_weights_name = model_name + '-SIM_' + data_name
+        #
+        # save_weights_path = os.path.join(self.args.checkpoint_dir, save_weights_name)
+        # sample_path = save_weights_path + 'sampled_img/'
+        #
+        # if not os.path.exists(save_weights_path):
+        #     os.mkdir(save_weights_path)
+        # if not os.path.exists(sample_path):
+        #     os.mkdir(sample_path)
 
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
         imgs, imgs_gt, output = [], [], []

@@ -3,31 +3,41 @@
 todo: complete
 """
 
-
-import DNN
+from abc import abstractmethod
+import tensorflow as tf
+from models.DNN import DNN
 
 
 class GAN(DNN):
     """
         Abstract class for any GAN architecture
     """
-
     def __init__(self, args):
         DNN.__init__(self, args)
 
-    @abstractmethod
-    def discriminator(self, x, is_training=True, reuse=False):
+
+    def discriminator(self):
         pass
 
-    @abstractmethod
-    def generator(self, z, is_training=True, reuse=False):
+    def generator(self):
         pass
 
-    @abstractmethod
+    def discriminator_loss(self, disc_real_output, disc_generated_output):
+        real_loss = self.loss_object(tf.ones_like(disc_real_output),
+                                     disc_real_output)
+        generated_loss = self.loss_object(tf.zeros_like(disc_generated_output),
+                                          disc_generated_output)
+        total_disc_loss = real_loss + generated_loss
+
+        return total_disc_loss
+
+    def generator_loss(self, fake_output):
+        return self.loss_object(tf.ones_like(fake_output),
+                                fake_output)
+
     def build_model(self):
         pass
 
-    @abstractmethod
     def train(self):
         pass
 
@@ -40,10 +50,8 @@ class GAN(DNN):
             self.model_name, self.dataset_name,
             self.batch_size, self.z_dim)
 
-    @abstractmethod
     def save(self, checkpoint_dir, step):
         pass
 
-    @abstractmethod
     def load(self, checkpoint_dir):
         pass

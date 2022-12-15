@@ -143,8 +143,4 @@ def data_loader_multi_channel_3d_wf(images_path, data_path, wf_path, gt_path, ny
     return image_batch, wf_batch, gt_batch
 
 
-def load_sample(dir):
-    """
-    todo: convert any type of data to [x, y, z, ch] then return dimension
-    """
-    return 0
+
