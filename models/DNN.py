@@ -54,94 +54,9 @@ class DNN(ABC):
     # --------------------------------------------------------------------------------
     #                             Sample and validate
     # --------------------------------------------------------------------------------
+    @abstractmethod
     def validate(self, epoch, sample=0):
-        """
-        todo: complete
-        :param epoch:
-        :param sample:
-        :return:
-        """
-        patch_y, patch_x, patch_z = self.input_dim
-        validate_path = glob.glob(validate_images_path + '*')
-        validate_path.sort()
-        if sample == 1:
-            validate_path = np.random.choice(validate_path, size=1)
-        elif self.args.validate_num < validate_path.__len__():
-            validate_path = validate_path[0:self.args.validate_num]
-
-        # save_weights_name = model_name + '-SIM_' + data_name
-        #
-        # save_weights_path = os.path.join(self.args.checkpoint_dir, save_weights_name)
-        # sample_path = save_weights_path + 'sampled_img/'
-        #
-        # if not os.path.exists(save_weights_path):
-        #     os.mkdir(save_weights_path)
-        # if not os.path.exists(sample_path):
-        #     os.mkdir(sample_path)
-
-        mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
-        imgs, imgs_gt, output = [], [], []
-        for path in validate_path:
-            [imgs, imgs_gt] = \
-                data_loader([path], validate_images_path, validate_gt_path,
-                            patch_y, patch_x, patch_z, 1,
-                            norm_flag=self.args.norm_flag)
-
-            output = self.model.predict(imgs)
-            # predict generates [1, x, y, z, 1]
-            # It is converted to [x, y, z] below
-            output = np.reshape(output, (patch_x * 2, patch_y * 2, patch_z))
-
-            output_proj = np.max(output, 2)
-
-            gt_proj = np.max(np.reshape(imgs_gt, (patch_x * 2, patch_y * 2, patch_z)), 2)
-            mses, nrmses, psnrs, ssims, uqis = img_comp(gt_proj, output_proj, mses, nrmses, psnrs, ssims, uqis)
-
-        if sample == 0:
-            # if best, save weights.best
-            self.model.save_weights(save_weights_path + 'weights_latest.h5')
-
-            if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save_weights(save_weights_path + 'weights_best.h5')
-                print(self.model.summary)
-
-            validate_nrmse.append(np.mean(nrmses))
-            curlr_g = lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
-            curlr_d = lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
-            self.write_log(writer, val_names[0], np.mean(mses), epoch)
-            self.write_log(writer, val_names[1], np.mean(ssims), epoch)
-            self.write_log(writer, val_names[2], np.mean(psnrs), epoch)
-            self.write_log(writer, val_names[3], np.mean(nrmses), epoch)
-            self.write_log(writer, val_names[4], np.mean(uqis), epoch)
-            self.write_log(writer, 'lr_g', curlr_g, epoch)
-            self.write_log(writer, 'lr_d', curlr_d, epoch)
-
-        else:
-            imgs = np.mean(imgs, 4)
-            plt.figure(figsize=(22, 6))
-
-            # figures equal to the number of z patches in columns
-            for j in range(patch_z):
-                output_results = {'Raw Input': imgs[0, :, :, j],
-                                  'Super Resolution Output': output[:, :, j],
-                                  'Ground Truth': imgs_gt[0, :, :, j, 0]}
-                plt.title('Z = ' + str(j))
-                for i, (label, img) in enumerate(output_results.items()):
-                    # first row: input image average of angles and phases
-                    # second row: resulting output
-                    # third row: ground truth
-                    plt.subplot(3, patch_z, j + patch_z * i + 1)
-                    plt.ylabel(label)
-                    plt.imshow(img, cmap=plt.get_cmap('hot'))
-
-                    plt.gca().axes.yaxis.set_ticklabels([])
-                    plt.gca().axes.xaxis.set_ticklabels([])
-                    plt.gca().axes.yaxis.set_ticks([])
-                    plt.gca().axes.xaxis.set_ticks([])
-                    plt.colorbar()
-
-            plt.savefig(sample_path + '%d.png' % epoch)  # Save sample results
-            plt.close("all")  # Close figures to avoid memory leak
+        pass
 
     @abstractmethod
     def visualize_results(self, epoch):

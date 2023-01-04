@@ -1,28 +1,12 @@
 from abc import ABC, abstractmethod
-import os
+
 import numpy as np
 import tifffile as tiff
-import matplotlib.pyplot as plt
-from utils import fcns
 
 
 class Data(ABC):
     def __init__(self, args):
         self.args = args
-        self.args.data_dir = fcns.fix_path(self.args.data_dir)
-        input_dir = os.path.join(self.args.data_dir, 'training', 'gt')
-        in_sample_dir = os.path.join(input_dir,
-                                     os.listdir(input_dir)[0])
-        self.input_dim = self.load_sample(in_sample_dir)
-        self.output_dim = np.append(self.input_dim[:1] * self.args.scale_factor,
-                                    self.input_dim[2:])
-
-        self.train_dir = None
-        self.x_train_dir = None
-        self.y_train_dir = None
-        self.valid_dir = None
-        self.x_valid_dir = None
-        self.y_valid_dir = None
         super().__init__()
 
     def load_sample(self, path):
@@ -31,8 +15,8 @@ class Data(ABC):
         """
         img = np.transpose(tiff.imread(path), (1, 2, 0))
 
-        plt.imshow(img)
-        plt.show()
+        # plt.imshow(img)
+        # plt.show()
         in_size = list(np.shape(img))
         n_channels = self.args.n_phases * self.args.n_angles
         in_size[0] //= self.args.scale_factor
@@ -40,6 +24,7 @@ class Data(ABC):
 
         in_size.append(n_channels)
         return in_size
+
     # def load_psf(self):
     # --------------------------------------------------------------------------------
     #                             Read OTF and PSF
@@ -60,3 +45,6 @@ class Data(ABC):
     #     halfy = pParam.Ny // 2
     #     psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
     #     psf = np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)
+
+    def data_loader(self):
+        pass

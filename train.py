@@ -36,10 +36,6 @@ def main():
                  'CGAN': CGAN,
                  'DNN': DNN}
 
-    data_groups = {'training',
-                'testing',
-                'validation'}
-    data_type = {'raw', 'gt'}
 
     # data = data_loader()
     # x_train, y_train = \
@@ -48,16 +44,16 @@ def main():
     #                              norm_flag=norm_flag)
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
-    #
-    # # build graph
-    # dnn.build_model()
-    #
+
+    # build graph
+    dnn.build_model()
+
     # # show network architecture
     # show_all_variables()
     #
-    # # launch the graph in a session
-    # dnn.train()
-    # print(" [*] Training finished!")
+    # launch the graph in a session
+    dnn.train()
+    print(" [*] Training finished!")
     #
     # # visualize learned generator
     # dnn.visualize_results(args.epoch-1)

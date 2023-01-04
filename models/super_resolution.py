@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Conv3D, UpSampling3D, LeakyReLU, Lambda, ReL
 from utils.common import global_average_pooling3d, conv_block3d
 
 
-def srcnn(net_input, scale, filters=[9, 1, 5], coeffs=[64, 32]):
+def srcnn(net_input, scale=2, filters=[9, 1, 5], coeffs=[64, 32]):
     """
     source: https://arxiv.org/pdf/1501.00092.pdf
     important: deeper is not better here
@@ -76,12 +76,12 @@ def res_group(net_input, channel, n_RCAB):
     return conv
 
 
-def rcan(net_input, channel=64, n_res_group=3, n_rcab=5):
+def rcan(net_input, scale=2, channel=64, n_res_group=3, n_rcab=5):
     conv = Conv3D(channel, kernel_size=3, padding='same')(net_input)
     for _ in range(n_res_group):
         conv = res_group(conv, channel=channel, n_RCAB=n_rcab)
 
-    up = UpSampling3D(size=(2, 2, 1))(conv)
+    up = UpSampling3D(size=(scale, scale, 1))(conv)
     conv = Conv3D(channel, kernel_size=3, padding='same')(up)
     conv = LeakyReLU(alpha=0.2)(conv)
     conv = Conv3D(1, kernel_size=3, padding='same')(conv)

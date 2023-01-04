@@ -15,7 +15,6 @@ class GAN(DNN):
     def __init__(self, args):
         DNN.__init__(self, args)
 
-
     def discriminator(self):
         pass
 

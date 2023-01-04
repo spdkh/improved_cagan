@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Conv3D, UpSampling3D, LeakyReLU, Lambda, ReL
 from utils.common import global_average_pooling3d, conv_block3d
 
 
-def discriminator(input_shape):
+def discriminator(inputs):
     """
 
     Parameters
@@ -17,7 +17,6 @@ def discriminator(input_shape):
     -------
 
     """
-    inputs = Input(input_shape)
     x0 = Conv3D(32, kernel_size=3, padding='same')(inputs)
     x0 = LeakyReLU(alpha=0.1)(x0)
 
@@ -29,4 +28,4 @@ def discriminator(input_shape):
     y1 = Dense(128)(y0)
     y1 = LeakyReLU(alpha=0.1)(y1)
     outputs = Dense(1, activation='sigmoid')(y1)
-    return inputs, outputs
+    return outputs
