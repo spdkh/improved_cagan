@@ -53,7 +53,11 @@ class CAGAN(GAN):
         print('judge', np.shape(judge))
         print('fake_hp', np.shape(fake_hp))
         # last fake hp
-        gen_loss = self.generator_loss(judge)
+        # gen_loss = self.generator_loss(judge)
+        gen_total_loss, gen_gan_loss, gen_l1_loss =\
+            self.generator_loss(judge, self.gen.output, self.gen.output)
+        # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
+
         self.gen.compile(loss=gen_loss,
                          optimizer=self.args.g_opt)
         # if weight_wf_loss > 0:
@@ -111,6 +115,7 @@ class CAGAN(GAN):
                                           self.args.batch_size,
                                           self.args.norm_flag,
                                           self.args.scale_factor)
+
 
                 loss_generator = self.gen.train_on_batch(input_g, gt_g)
             gloss_record.append(loss_generator)
@@ -358,15 +363,26 @@ class CAGAN(GAN):
 
     def generator_loss(self,
                        disc_generated_output):
-        def gen_loss(y_true, y_pred):
-            alpha = 100
-            beta = 1
-            gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
-                                        disc_generated_output)
+        # def gen_loss(y_true, y_pred):
+        #     alpha = 100
+        #     beta = 1
+        #     gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
+        #                                 disc_generated_output)
+        #
+        #     # Mean absolute error
+        #     l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+        #
+        #     total_gen_loss = gan_loss + (alpha * l1_loss)
+        #     return total_gen_loss  #, gan_loss, l1_loss
+        # return gen_loss
 
-            # Mean absolute error
-            l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+    def generator_loss(self, disc_generated_output, gen_output, target):
+        gan_loss = self.loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
+        alpha = 100
 
-            total_gen_loss = gan_loss + (alpha * l1_loss)
-            return total_gen_loss  #, gan_loss, l1_loss
-        return gen_loss
+        # Mean absolute error
+        l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
+
+        total_gen_loss = gan_loss + (alpha * l1_loss)
+
+        return total_gen_loss, gan_loss, l1_loss

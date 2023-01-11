@@ -2,6 +2,8 @@
     author: SPDKH
     todo: complete
 """
+import numpy as np
+
 from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
 from tensorflow.keras.layers import Conv3D, UpSampling3D, LeakyReLU, Lambda, ReLU
 from utils.common import global_average_pooling3d, conv_block3d
