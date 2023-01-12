@@ -56,8 +56,8 @@ def parse_args():
     parser.add_argument("--scale_factor", type=int, default=2)
     parser.add_argument("--norm_flag", type=int, default=1)
     parser.add_argument('--epoch', type=int, default=20, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=2)
-    parser.add_argument("--validate_interval", type=int, default=5)
+    parser.add_argument("--sample_interval", type=int, default=50)
+    parser.add_argument("--validate_interval", type=int, default=50)
     parser.add_argument("--validate_num", type=int, default=5)
     parser.add_argument('--batch_size', type=int, default=2,
                         help='The size of batch')

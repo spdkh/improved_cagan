@@ -6,6 +6,8 @@ import datetime
 import os
 import glob
 
+from tensorflow.keras import backend as K
+
 from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
 from tensorflow.keras.models import Model
 import tensorflow as tf
@@ -32,6 +34,9 @@ class CAGAN(GAN):
         self.g_input = Input(self.data.input_dim)
         self.d_input = Input(self.data.output_dim)
 
+        self.g_output = None
+        self.d_output = None
+
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
         optimizer_d = self.args.d_opt
@@ -50,15 +55,13 @@ class CAGAN(GAN):
         judge = self.frozen_d(fake_hp)
         label = np.zeros(self.args.batch_size)
 
-        print('judge', np.shape(judge))
-        print('fake_hp', np.shape(fake_hp))
         # last fake hp
-        # gen_loss = self.generator_loss(judge)
-        gen_total_loss, gen_gan_loss, gen_l1_loss =\
-            self.generator_loss(judge, self.gen.output, self.gen.output)
+        gen_loss = self.generator_loss(judge)
+        # gen_total_loss, gen_gan_loss, gen_l1_loss =\
+        # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
-        self.gen.compile(loss=gen_loss,
+        self.gen.compile(loss=loss_mse_ssim_3d,
                          optimizer=self.args.g_opt)
         # if weight_wf_loss > 0:
         #     combined = Model(input_lp, [judge, fake_hp, fake_hp])
@@ -101,11 +104,9 @@ class CAGAN(GAN):
         valid = np.ones(self.args.batch_size).reshape((self.args.batch_size, 1))
         fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
 
-
         train_names = ['Generator_loss', 'Discriminator_loss']
 
         for it in range(self.args.epoch):
-
             # ------------------------------------
             #         train generator
             # ------------------------------------
@@ -116,43 +117,41 @@ class CAGAN(GAN):
                                           self.args.norm_flag,
                                           self.args.scale_factor)
 
-
                 loss_generator = self.gen.train_on_batch(input_g, gt_g)
-            gloss_record.append(loss_generator)
+                gloss_record.append(loss_generator)
 
-        # ------------------------------------
-        #         train discriminator
-        # ------------------------------------
-        for i in range(self.args.train_discriminator_times):
-            input_d, gt_d = \
-                    self.data.data_loader('train',
-                                          batch_size_d,
-                                          self.args.norm_flag,
-                                          self.args.scale_factor)
-            fake_input_d = self.gen.predict(input_d)
-            # input_d = np.concatenate((gt_d, fake_input_d), axis=0)
-            # label = np.concatenate((valid_d, fake_d), axis=0)
-            # loss_discriminator = d.train_on_batch(input_d, label)
-            # discriminator loss separate for real/fake:
-            # https://stackoverflow.com/questions/49988496/loss-functions-in-gans
+            # ------------------------------------
+            #         train discriminator
+            # ------------------------------------
+            for i in range(self.args.train_discriminator_times):
+                input_d, gt_d = \
+                        self.data.data_loader('train',
+                                              batch_size_d,
+                                              self.args.norm_flag,
+                                              self.args.scale_factor)
 
-            loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
-            loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
-            dloss_record.append(loss_discriminator[0])
+                fake_input_d = self.gen.predict(input_d)
 
-        elapsed_time = datetime.datetime.now() - start_time
-        print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
-            it + 1, elapsed_time, loss_discriminator[0], loss_discriminator[1], loss_generator))
+                # discriminator loss separate for real/fake:
+                # https://stackoverflow.com/questions/49988496/loss-functions-in-gans
 
-        if (it + 1) % self.args.sample_interval == 0:
-            self.validate(it + 1, sample=1)
+                loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
+                loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
+                dloss_record.append(loss_discriminator[0])
 
-        if (it + 1) % self.args.validate_interval == 0:
-            self.validate(it + 1, sample=0)
-            self.write_log(self.writer, train_names[0], np.mean(gloss_record), it + 1)
-            self.write_log(self.writer, train_names[1], np.mean(dloss_record), it + 1)
-            gloss_record = []
-            dloss_record = []
+            elapsed_time = datetime.datetime.now() - start_time
+            print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
+                it + 1, elapsed_time, loss_discriminator[0], loss_discriminator[1], loss_generator))
+
+            if (it + 1) % self.args.sample_interval == 0:
+                self.validate(it + 1, sample=1)
+
+            if (it + 1) % self.args.validate_interval == 0:
+                self.validate(it + 1, sample=0)
+                self.write_log(self.writer, train_names[0], np.mean(gloss_record), it + 1)
+                self.write_log(self.writer, train_names[1], np.mean(dloss_record), it + 1)
+                gloss_record = []
+                dloss_record = []
 
     def validate(self, epoch, sample=0):
         """
@@ -239,7 +238,7 @@ class CAGAN(GAN):
 
             if min(validate_nrmse) > np.mean(nrmses):
                 self.model.save_weights(save_weights_path + 'weights_best.h5')
-                # print(self.model.summary)
+                print(self.model.summary)
 
             validate_nrmse.append(np.mean(nrmses))
             curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
@@ -342,47 +341,64 @@ class CAGAN(GAN):
         return mses, nrmses, psnrs, ssims, uqis
 
     def discriminator(self):
+        self.d_output = discriminator(self.d_input)
+
         disc = Model(inputs=self.d_input,
-                     outputs=discriminator(self.d_input))
+                     outputs=self.d_output)
         disc.compile(loss='binary_crossentropy',
                      optimizer=self.args.d_opt,
                      metrics=['accuracy'])
-        print('disc inputs', disc.inputs)
-        print('disc outputs', disc.outputs)
 
         frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
         frozen_disc.trainable = False
         return disc, frozen_disc
 
     def generator(self):
+        self.g_output = rcan(self.g_input)
+
         gen = Model(inputs=self.g_input,
-                    outputs=rcan(self.g_input))
-        # print('gen inputs', gen.inputs)
-        # print('gen outputs', gen.outputs)
+                    outputs=self.g_output)
+
         return gen
 
     def generator_loss(self,
                        disc_generated_output):
-        # def gen_loss(y_true, y_pred):
-        #     alpha = 100
-        #     beta = 1
-        #     gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
-        #                                 disc_generated_output)
-        #
-        #     # Mean absolute error
-        #     l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
-        #
-        #     total_gen_loss = gan_loss + (alpha * l1_loss)
-        #     return total_gen_loss  #, gan_loss, l1_loss
-        # return gen_loss
+        def gen_loss(y_true, y_pred):
+            alpha = 100
+            beta = 1
+            gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
+                                        disc_generated_output)
 
-    def generator_loss(self, disc_generated_output, gen_output, target):
-        gan_loss = self.loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
-        alpha = 100
+            # Mean absolute error
+            l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
 
-        # Mean absolute error
-        l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
+            total_gen_loss = gan_loss + (alpha * l1_loss)
+            return total_gen_loss  #, gan_loss, l1_loss
+        return gen_loss
 
-        total_gen_loss = gan_loss + (alpha * l1_loss)
+    # def generator_loss(self, disc_generated_output, gen_output, target):
+    #     gan_loss = self.loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
+    #     alpha = 100
+    #
+    #     # Mean absolute error
+    #     l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
+    #
+    #     total_gen_loss = gan_loss + (alpha * l1_loss)
+    #
+    #     return total_gen_loss, gan_loss, l1_loss
 
-        return total_gen_loss, gan_loss, l1_loss
+
+def loss_mse_ssim_3d(y_true, y_pred):
+    ssim_para = 1e-1  # 1e-2
+    mse_para = 1
+
+    # SSIM loss and MSE loss
+    x = K.permute_dimensions(y_true, (0, 4, 1, 2, 3))
+    y = K.permute_dimensions(y_pred, (0, 4, 1, 2, 3))
+    x = (x - K.min(x)) / (K.max(x) - K.min(x))
+    y = (y - K.min(y)) / (K.max(y) - K.min(y))
+
+    ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1)))
+    mse_loss = mse_para * K.mean(K.square(y - x))
+
+    return mse_loss + ssim_loss
