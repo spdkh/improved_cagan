@@ -38,11 +38,19 @@ class FixedCell(Data):
 
         save_weights_name = 'SIM_fixed_cell'
 
-        # save_weights_path = os.path.join(save_weights_dir, save_weights_name)
-        # sample_path = os.path.join(save_weights_path, 'sampled_img')
+        self.save_weights_path = os.path.join(self.args.checkpoint_dir,
+                                         save_weights_name)
 
-        # self.log_path = os.path.join(save_weights_path, 'graph')
+        if not os.path.exists(self.save_weights_path):
+            os.mkdir(self.save_weights_path)
+
+        self.sample_path = os.path.join(self.save_weights_path, 'sampled_img')
+
+        self.log_path = os.path.join(self.save_weights_path, 'graph')
         self.data_dirs = dict()
+
+        if not os.path.exists(self.log_path):
+            os.mkdir(self.log_path)
 
         for data_group in self.data_groups.keys():
             self.data_dirs[data_group] = os.path.join(self.args.data_dir,

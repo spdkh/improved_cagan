@@ -167,12 +167,9 @@ class CAGAN(GAN):
         self.lr_controller_d.on_train_begin()
         validate_nrmse = [np.Inf]
 
-        # --------------------------------------------------------------------------------
-        #                                 about Tensor Board
-        # --------------------------------------------------------------------------------
-
-        if not os.path.exists(self.data.log_path):
-            os.mkdir(self.data.log_path)
+        # -------------------------------------------------------------------
+        #                       about Tensor Board
+        # -------------------------------------------------------------------
         self.writer = tf.summary.create_file_writer(self.data.log_path)
         val_names = ['val_MSE',
                      'val_SSIM',
@@ -180,13 +177,14 @@ class CAGAN(GAN):
                      'val_NRMSE',
                      'val_UQI']
 
-        patch_y, patch_x, patch_z = self.Data.input_dim
-        validate_path = glob.glob(validate_images_path + '*')
+        patch_y, patch_x, patch_z, _ = self.data.input_dim
+        validate_path = glob.glob(self.data.data_dirs['val'] + '*')
         validate_path.sort()
-        if sample == 1:
-            validate_path = np.random.choice(validate_path, size=1)
-        elif self.args.validate_num < validate_path.__len__():
-            validate_path = validate_path[0:self.args.validate_num]
+        # print('_______________', validate_path)
+        # if sample == 1:
+        #     validate_path = np.random.choice(validate_path, size=1)
+        # elif self.args.validate_num < validate_path.__len__():
+        #     validate_path = validate_path[0:self.args.validate_num]
 
         # save_weights_name = model_name + '-SIM_' + data_name
         #
@@ -200,28 +198,26 @@ class CAGAN(GAN):
 
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
         imgs, imgs_gt, output = [], [], []
-        for path in validate_path:
-            [imgs, imgs_gt] = \
-                self.Data.data_loader([path],
-                                      validate_images_path,
-                                      validate_gt_path,
-                                      self.Data.input_dim[0],
-                                      self.Data.input_dim[1],
-                                      self.Data.input_dim[2],
-                                      self.Data.output_dim[3],
-                                      norm_flag=self.args.norm_flag)
+        # for path in validate_path:
+        imgs, imgs_gt = \
+            self.data.data_loader('val',
+                                  self.args.batch_size,
+                                  self.args.norm_flag,
+                                  self.args.scale_factor)
 
-            output = self.model.predict(imgs)
+        outputs = self.gen.predict(imgs)
+        for output, img_gt in zip(outputs, imgs_gt):
+
             # predict generates [1, x, y, z, 1]
             # It is converted to [x, y, z] below
+            # print(np.shape(imgs))
             output = np.reshape(output,
-                                self.Data.output_dim[:-1])
+                                self.data.output_dim[:-1])
 
-            output_proj = np.max(output,
-                                 2)
+            output_proj = np.max(output, 2)
 
-            gt_proj = np.max(np.reshape(imgs_gt,
-                                        self.Data.output_dim[:-1]),
+            gt_proj = np.max(np.reshape(img_gt,
+                                        self.data.output_dim[:-1]),
                              2)
             mses, nrmses, psnrs, ssims, uqis =\
                 self.img_comp(gt_proj,
@@ -234,22 +230,27 @@ class CAGAN(GAN):
 
         if sample == 0:
             # if best, save weights.best
-            self.model.save_weights(save_weights_path + 'weights_latest.h5')
+            self.gen.save_weights(self.data.save_weights_path +
+                                  'weights_gen_latest.h5')
+            self.disc.save_weights(self.data.save_weights_path +
+                                   'weights_disc_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save_weights(save_weights_path + 'weights_best.h5')
-                print(self.model.summary)
+                self.gen.save_weights(self.data.save_weights_path +
+                                      'weights_gen_best.h5')
+                self.disc.save_weights(self.data.save_weights_path +
+                                       'weights_disc_best.h5')
 
             validate_nrmse.append(np.mean(nrmses))
             curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
             curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
-            self.write_log(writer, val_names[0], np.mean(mses), epoch)
-            self.write_log(writer, val_names[1], np.mean(ssims), epoch)
-            self.write_log(writer, val_names[2], np.mean(psnrs), epoch)
-            self.write_log(writer, val_names[3], np.mean(nrmses), epoch)
-            self.write_log(writer, val_names[4], np.mean(uqis), epoch)
-            self.write_log(writer, 'lr_g', curlr_g, epoch)
-            self.write_log(writer, 'lr_d', curlr_d, epoch)
+            self.write_log(self.writer, val_names[0], np.mean(mses), epoch)
+            self.write_log(self.writer, val_names[1], np.mean(ssims), epoch)
+            self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
+            self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
+            self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
+            self.write_log(self.writer, 'lr_g', curlr_g, epoch)
+            self.write_log(self.writer, 'lr_d', curlr_d, epoch)
 
         else:
             imgs = np.mean(imgs, 4)
@@ -275,7 +276,7 @@ class CAGAN(GAN):
                     plt.gca().axes.xaxis.set_ticks([])
                     plt.colorbar()
 
-            plt.savefig(sample_path + '%d.png' % epoch)  # Save sample results
+            plt.savefig(self.data.sample_path + '%d.png' % epoch)  # Save sample results
             plt.close("all")  # Close figures to avoid memory leak
 
     def prctile_norm(self, x_in, min_prc=0, max_prc=100):
