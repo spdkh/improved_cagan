@@ -18,6 +18,8 @@ from skimage.metrics import mean_squared_error as compare_mse, \
     peak_signal_noise_ratio as compare_psnr, \
     structural_similarity as compare_ssim
 from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
 from utils.lr_controller import ReduceLROnPlateau
 from data.fixed_cell import FixedCell
@@ -36,6 +38,8 @@ class CAGAN(GAN):
 
         self.g_output = None
         self.d_output = None
+
+        self.writer = None
 
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
@@ -76,21 +80,21 @@ class CAGAN(GAN):
         #                      loss_weights=[0.1, 1])  # 0.1 1
 
         self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
-                                            factor=self.args.lr_decay_factor,
-                                            patience=10,
-                                            mode='min',
-                                            min_delta=1e-4,
-                                            cooldown=0,
-                                            min_learning_rate=self.args.g_start_lr * 0.1,
-                                            verbose=1)
+                                                 factor=self.args.lr_decay_factor,
+                                                 patience=10,
+                                                 mode='min',
+                                                 min_delta=1e-3,
+                                                 cooldown=0,
+                                                 min_learning_rate=self.args.g_start_lr * 0.1,
+                                                 verbose=1)
         self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
-                                            factor=self.args.lr_decay_factor,
-                                            patience=10,
-                                            mode='min',
-                                            min_delta=1e-4,
-                                            cooldown=0,
-                                            min_learning_rate=self.args.d_start_lr * 0.1,
-                                            verbose=1)
+                                                 factor=self.args.lr_decay_factor,
+                                                 patience=10,
+                                                 mode='min',
+                                                 min_delta=1e-3,
+                                                 cooldown=0,
+                                                 min_learning_rate=self.args.d_start_lr * 0.1,
+                                                 verbose=1)
 
     def train(self):
         # label
@@ -111,7 +115,7 @@ class CAGAN(GAN):
             #         train generator
             # ------------------------------------
             for i in range(self.args.train_generator_times):
-                input_g, gt_g =\
+                input_g, gt_g = \
                     self.data.data_loader('train',
                                           self.args.batch_size,
                                           self.args.norm_flag,
@@ -125,10 +129,10 @@ class CAGAN(GAN):
             # ------------------------------------
             for i in range(self.args.train_discriminator_times):
                 input_d, gt_d = \
-                        self.data.data_loader('train',
-                                              batch_size_d,
-                                              self.args.norm_flag,
-                                              self.args.scale_factor)
+                    self.data.data_loader('train',
+                                          batch_size_d,
+                                          self.args.norm_flag,
+                                          self.args.scale_factor)
 
                 fake_input_d = self.gen.predict(input_d)
 
@@ -207,7 +211,6 @@ class CAGAN(GAN):
 
         outputs = self.gen.predict(imgs)
         for output, img_gt in zip(outputs, imgs_gt):
-
             # predict generates [1, x, y, z, 1]
             # It is converted to [x, y, z] below
             # print(np.shape(imgs))
@@ -219,7 +222,7 @@ class CAGAN(GAN):
             gt_proj = np.max(np.reshape(img_gt,
                                         self.data.output_dim[:-1]),
                              2)
-            mses, nrmses, psnrs, ssims, uqis =\
+            mses, nrmses, psnrs, ssims, uqis = \
                 self.img_comp(gt_proj,
                               output_proj,
                               mses,
@@ -253,14 +256,16 @@ class CAGAN(GAN):
             self.write_log(self.writer, 'lr_d', curlr_d, epoch)
 
         else:
-            imgs = np.mean(imgs, 4)
+
+            # imgs = np.mean(imgs[0], 4)
             plt.figure(figsize=(22, 6))
 
             # figures equal to the number of z patches in columns
             for j in range(patch_z):
-                output_results = {'Raw Input': imgs[0, :, :, j],
-                                  'Super Resolution Output': output[:, :, j],
+                output_results = {'Raw Input': imgs[0, :, :, j, 0],
+                                  'Super Resolution Output': outputs[0, :, :, j, 0],
                                   'Ground Truth': imgs_gt[0, :, :, j, 0]}
+
                 plt.title('Z = ' + str(j))
                 for i, (label, img) in enumerate(output_results.items()):
                     # first row: input image average of angles and phases
@@ -365,28 +370,22 @@ class CAGAN(GAN):
     def generator_loss(self,
                        disc_generated_output):
         def gen_loss(y_true, y_pred):
-            alpha = 100
+            alpha = 1
+            beta = 10
             beta = 1
             gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
                                         disc_generated_output)
 
-            # Mean absolute error
+            # # Mean absolute error
             l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
+            new_loss = loss_mse_ssim_3d(y_true, y_pred)
 
-            total_gen_loss = gan_loss + (alpha * l1_loss)
-            return total_gen_loss  #, gan_loss, l1_loss
+            total_gen_loss = gan_loss +\
+                             (alpha * l1_loss) +\
+                             (beta * new_loss)
+            return total_gen_loss  # , gan_loss, l1_loss
+
         return gen_loss
-
-    # def generator_loss(self, disc_generated_output, gen_output, target):
-    #     gan_loss = self.loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
-    #     alpha = 100
-    #
-    #     # Mean absolute error
-    #     l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
-    #
-    #     total_gen_loss = gan_loss + (alpha * l1_loss)
-    #
-    #     return total_gen_loss, gan_loss, l1_loss
 
 
 def loss_mse_ssim_3d(y_true, y_pred):

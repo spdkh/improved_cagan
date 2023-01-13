@@ -55,10 +55,10 @@ def parse_args():
     #                     help='Dimension of the patches followed by number of channels')
     parser.add_argument("--scale_factor", type=int, default=2)
     parser.add_argument("--norm_flag", type=int, default=1)
-    parser.add_argument('--epoch', type=int, default=200, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=2)
-    parser.add_argument("--validate_interval", type=int, default=5)
-    parser.add_argument("--validate_num", type=int, default=5)
+    parser.add_argument('--epoch', type=int, default=20000, help='The number of epochs to run')
+    parser.add_argument("--sample_interval", type=int, default=200)
+    parser.add_argument("--validate_interval", type=int, default=500)
+    parser.add_argument("--validate_num", type=int, default=500)
     parser.add_argument('--batch_size', type=int, default=2,
                         help='The size of batch')
 
@@ -69,7 +69,7 @@ def parse_args():
     parser.add_argument("--g_opt", type=str, default="adam")
     parser.add_argument("--d_opt", type=str, default="adam")
     parser.add_argument("--train_discriminator_times", type=int, default=1)
-    parser.add_argument("--train_generator_times", type=int, default=10)
+    parser.add_argument("--train_generator_times", type=int, default=3)
 
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
                         help='Directory name to save the checkpoints')
@@ -80,8 +80,8 @@ def parse_args():
 
     parser.add_argument("--weight_wf_loss", type=float, default=0)
     parser.add_argument("--wave_len", type=int, default=525)
-    parser.add_argument("--n_ResGroup", type=int, default=2)
-    parser.add_argument("--n_RCAB", type=int, default=3)
+    parser.add_argument("--n_ResGroup", type=int, default=3)
+    parser.add_argument("--n_RCAB", type=int, default=5)
 
     parser.add_argument("--n_phases", type=int, default=5)
     parser.add_argument("--n_angles", type=int, default=3)
