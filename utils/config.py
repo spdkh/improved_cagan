@@ -55,17 +55,17 @@ def parse_args():
     #                     help='Dimension of the patches followed by number of channels')
     parser.add_argument("--scale_factor", type=int, default=2)
     parser.add_argument("--norm_flag", type=int, default=1)
-    parser.add_argument('--epoch', type=int, default=20000, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=200)
-    parser.add_argument("--validate_interval", type=int, default=500)
-    parser.add_argument("--validate_num", type=int, default=500)
-    parser.add_argument('--batch_size', type=int, default=2,
+    parser.add_argument('--epoch', type=int, default=5000, help='The number of epochs to run')
+    parser.add_argument("--sample_interval", type=int, default=100)
+    parser.add_argument("--validate_interval", type=int, default=200)
+    parser.add_argument("--validate_num", type=int, default=200)
+    parser.add_argument('--batch_size', type=int, default=4,
                         help='The size of batch')
 
-    parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
-    parser.add_argument("--g_start_lr", type=float, default=1e-4)  # 1e-4
+    parser.add_argument("--d_start_lr", type=float, default=1e-7)  # 2e-5
+    parser.add_argument("--g_start_lr", type=float, default=1e-6)  # 1e-4
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--load_weights", type=int, default=0)
+    parser.add_argument("--load_weights", type=int, default=1)
     parser.add_argument("--g_opt", type=str, default="adam")
     parser.add_argument("--d_opt", type=str, default="adam")
     parser.add_argument("--train_discriminator_times", type=int, default=1)

@@ -39,7 +39,7 @@ class FixedCell(Data):
         save_weights_name = 'SIM_fixed_cell'
 
         self.save_weights_path = os.path.join(self.args.checkpoint_dir,
-                                         save_weights_name)
+                                              save_weights_name)
 
         if not os.path.exists(self.save_weights_path):
             os.mkdir(self.save_weights_path)
@@ -62,7 +62,7 @@ class FixedCell(Data):
         print(self.data_dirs)
 
     def data_loader(self,
-                    mode,
+                    mode, it,
                     batch_size,
                     norm_flag,
                     scale,
@@ -80,6 +80,9 @@ class FixedCell(Data):
         Returns
         -------
 
+        todo 1: data loader only works with #samples >= #epochs: batches should reset after reaching the end of the samples
+        todo 1.5: only training samples equal to the number of epochs * batch_size are loaded not all the data
+        todo 2: assign wf = 0 changes to wf > 0 function too
         """
 
         images_names = os.listdir(self.data_dirs['x' + mode])
@@ -95,6 +98,7 @@ class FixedCell(Data):
                                                      gt_names,
                                                      self.data_dirs['x' + mode],
                                                      self.data_dirs['y' + mode],
+                                                     it,
                                                      batch_size,
                                                      norm_flag,
                                                      scale)
@@ -103,30 +107,28 @@ class FixedCell(Data):
                                                         gt_names,
                                                         self.data_dirs[mode],
                                                         '',
+                                                        it,
                                                         batch_size,
                                                         norm_flag,
                                                         scale)
 
     def data_loader_multi_channel_3d(self, images_names, gt_names, x_path, y_path,
-                                     batch_size, norm_flag=1, scale=2, wf=0):
+                                     it, batch_size, norm_flag=1, scale=2):
         """
-
         :param images_names:
         :param data_path:
-
         :param batch_size:
         :param norm_flag:
         :param scale:
         :param wf:
         :return:
         """
-        ## todo: rewrite the following line
         # print(images_names)
         # print(batch_size)
         # batch_images_path = np.random.choice(images_names,
         #                                      size=batch_size)
-        batch_images_path = images_names[:batch_size]
-        gt_images_path = gt_names[:batch_size]
+        batch_images_path = images_names[it:batch_size + it]
+        gt_images_path = gt_names[it:batch_size + it]
         image_batch = []
         gt_batch = []
         for i in range(len(batch_images_path)):
@@ -163,16 +165,10 @@ class FixedCell(Data):
                                      1),
                                      order='F').transpose((0, 2, 3, 1, 4))
 
-        if wf == 1:
-            image_batch = np.mean(image_batch, 4)
-            for b in range(batch_size):
-                image_batch[b, :, :, :] = prctile_norm(image_batch[b, :, :, :])
-            image_batch = image_batch[:, :, :, np.newaxis]
-
         return image_batch, gt_batch
 
     def data_loader_multi_channel_3d_wf(self, images_path, data_path, wf_path, gt_path, ny, nx, nz,
-                                        batch_size, norm_flag=1, scale=2, wf=0):
+                                        it, batch_size, norm_flag=1, scale=2, wf=0):
         data_path = fix_path(data_path)
         gt_path = fix_path(gt_path)
         images_path = [fix_path(image_path) for image_path in images_path]

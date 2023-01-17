@@ -42,7 +42,7 @@ class CAGAN(GAN):
         self.writer = None
 
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-
+        self.batch_id = {'train': 0, 'val': 0, 'test': 0}
         optimizer_d = self.args.d_opt
         optimizer_g = self.args.g_opt
 
@@ -102,14 +102,15 @@ class CAGAN(GAN):
         gloss_record = []
         dloss_record = []
 
-        batch_size_d = round(self.args.batch_size / 2)
+        # batch_size_d = round(self.args.batch_size / 2)
+        batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
         valid = np.ones(self.args.batch_size).reshape((self.args.batch_size, 1))
         fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
 
         train_names = ['Generator_loss', 'Discriminator_loss']
-
+        batch_id = self.batch_iterator(0)  # flag for iteration number including the inner loops
         for it in range(self.args.epoch):
             # ------------------------------------
             #         train generator
@@ -117,19 +118,21 @@ class CAGAN(GAN):
             for i in range(self.args.train_generator_times):
                 input_g, gt_g = \
                     self.data.data_loader('train',
+                                          self.batch_iterator(batch_id),
                                           self.args.batch_size,
                                           self.args.norm_flag,
                                           self.args.scale_factor)
 
                 loss_generator = self.gen.train_on_batch(input_g, gt_g)
                 gloss_record.append(loss_generator)
-
             # ------------------------------------
             #         train discriminator
             # ------------------------------------
             for i in range(self.args.train_discriminator_times):
+
                 input_d, gt_d = \
                     self.data.data_loader('train',
+                                          self.batch_iterator(batch_id),
                                           batch_size_d,
                                           self.args.norm_flag,
                                           self.args.scale_factor)
@@ -142,7 +145,6 @@ class CAGAN(GAN):
                 loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
                 loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
                 dloss_record.append(loss_discriminator[0])
-
             elapsed_time = datetime.datetime.now() - start_time
             print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
                 it + 1, elapsed_time, loss_discriminator[0], loss_discriminator[1], loss_generator))
@@ -156,6 +158,14 @@ class CAGAN(GAN):
                 self.write_log(self.writer, train_names[1], np.mean(dloss_record), it + 1)
                 gloss_record = []
                 dloss_record = []
+
+    def batch_iterator(self, cnt, mode='train'):
+        data_size = len(self.data.data_dirs['x' + mode])
+        if data_size // self.args.batch_size > cnt:
+            self.batch_id[mode] = 1 + cnt
+            return self.batch_id[mode]
+        self.batch_id[mode] = 0
+        return self.batch_id[mode]
 
     def validate(self, epoch, sample=0):
         """
@@ -205,6 +215,7 @@ class CAGAN(GAN):
         # for path in validate_path:
         imgs, imgs_gt = \
             self.data.data_loader('val',
+                                  self.batch_iterator(epoch - 1, 'val'),
                                   self.args.batch_size,
                                   self.args.norm_flag,
                                   self.args.scale_factor)
@@ -370,9 +381,9 @@ class CAGAN(GAN):
     def generator_loss(self,
                        disc_generated_output):
         def gen_loss(y_true, y_pred):
-            alpha = 1
-            beta = 10
-            beta = 1
+            w_gan = 1
+            w_l1 = 0
+            w_new = 10
             gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
                                         disc_generated_output)
 
@@ -380,9 +391,9 @@ class CAGAN(GAN):
             l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
             new_loss = loss_mse_ssim_3d(y_true, y_pred)
 
-            total_gen_loss = gan_loss +\
-                             (alpha * l1_loss) +\
-                             (beta * new_loss)
+            total_gen_loss = (w_gan * gan_loss) +\
+                             (w_l1 * l1_loss) +\
+                             (w_new * new_loss)
             return total_gen_loss  # , gan_loss, l1_loss
 
         return gen_loss
