@@ -69,7 +69,7 @@ def parse_args():
     parser.add_argument("--g_opt", type=str, default="adam")
     parser.add_argument("--d_opt", type=str, default="adam")
     parser.add_argument("--train_discriminator_times", type=int, default=1)
-    parser.add_argument("--train_generator_times", type=int, default=3)
+    parser.add_argument("--train_generator_times", type=int, default=10)
 
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
                         help='Directory name to save the checkpoints')

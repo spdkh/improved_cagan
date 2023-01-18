@@ -159,13 +159,12 @@ class CAGAN(GAN):
                 gloss_record = []
                 dloss_record = []
 
-    def batch_iterator(self, cnt, mode='train'):
-        data_size = len(self.data.data_dirs['x' + mode])
-        if data_size // self.args.batch_size > cnt:
-            self.batch_id[mode] = 1 + cnt
-            return self.batch_id[mode]
-        self.batch_id[mode] = 0
-        return self.batch_id[mode]
+    def unrolling(self, x):
+        net_input = x
+        for iteration in range(self.unrolling_iter):
+            x = self.sr_cnn(net_input)
+            net_input = x
+        return x
 
     def validate(self, epoch, sample=0):
         """
@@ -274,7 +273,7 @@ class CAGAN(GAN):
             # figures equal to the number of z patches in columns
             for j in range(patch_z):
                 output_results = {'Raw Input': imgs[0, :, :, j, 0],
-                                  'Super Resolution Output': outputs[0, :, :, j, 0],
+                                  'Super Resolution Output': np.array(outputs[0, :, :, j, 0]) / 65535,
                                   'Ground Truth': imgs_gt[0, :, :, j, 0]}
 
                 plt.title('Z = ' + str(j))
@@ -397,6 +396,14 @@ class CAGAN(GAN):
             return total_gen_loss  # , gan_loss, l1_loss
 
         return gen_loss
+
+    def batch_iterator(self, cnt, mode='train'):
+        data_size = len(self.data.data_dirs['x' + mode])
+        if data_size // self.args.batch_size > cnt:
+            self.batch_id[mode] = 1 + cnt
+            return self.batch_id[mode]
+        self.batch_id[mode] = 0
+        return self.batch_id[mode]
 
 
 def loss_mse_ssim_3d(y_true, y_pred):
