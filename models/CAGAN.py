@@ -2,8 +2,14 @@
 """
 todo: write
 """
+
+from utils.lr_controller import ReduceLROnPlateau
+from data.fixed_cell import FixedCell
+from models.GAN import GAN
+from models.binary_classification import discriminator
+from models.super_resolution import rcan
+
 import datetime
-import os
 import glob
 
 from tensorflow.keras import backend as K
@@ -21,14 +27,11 @@ from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 
-from utils.lr_controller import ReduceLROnPlateau
-from data.fixed_cell import FixedCell
-from models.GAN import GAN
-from models.binary_classification import discriminator
-from models.super_resolution import rcan
-
 
 class CAGAN(GAN):
+    """
+
+    """
     def __init__(self, args):
         GAN.__init__(self, args)
         print('CAGAN')
@@ -43,10 +46,21 @@ class CAGAN(GAN):
 
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
-        optimizer_d = self.args.d_opt
-        optimizer_g = self.args.g_opt
+        # optimizer_d = self.args.d_opt
+        # optimizer_g = self.args.g_opt
+
+        self.disc = None
+        self.frozen_d = None
+        self.gen = None
+        self.lr_controller_g = None
+        self.lr_controller_d = None
+        self.dloss_record = []
+        self.gloss_record = []
 
     def build_model(self):
+        """
+
+        """
         # --------------------------------------------------------------------------------
         #                              define combined model
         # --------------------------------------------------------------------------------
@@ -61,12 +75,18 @@ class CAGAN(GAN):
 
         # last fake hp
         gen_loss = self.generator_loss(judge)
+        # temp
+        psf = np.random.rand(128, 128, 11)
+        loss_wf = create_psf_loss(psf)
         # gen_total_loss, gen_gan_loss, gen_l1_loss =\
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
-        self.gen.compile(loss=loss_mse_ssim_3d,
-                         optimizer=self.args.g_opt)
+
+        self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
+                         optimizer=self.args.g_opt,
+                         loss_weights=[1, 0.1, self.args.weight_wf_loss])
+
         # if weight_wf_loss > 0:
         #     combined = Model(input_lp, [judge, fake_hp, fake_hp])
         #     loss_wf = create_psf_loss(psf)
@@ -87,6 +107,7 @@ class CAGAN(GAN):
                                                  cooldown=0,
                                                  min_learning_rate=self.args.g_start_lr * 0.1,
                                                  verbose=1)
+
         self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
                                                  factor=self.args.lr_decay_factor,
                                                  patience=10,
@@ -97,67 +118,85 @@ class CAGAN(GAN):
                                                  verbose=1)
 
     def train(self):
-        # label
+        """
+
+        """
+
         start_time = datetime.datetime.now()
-        gloss_record = []
-        dloss_record = []
-
-        # batch_size_d = round(self.args.batch_size / 2)
-        batch_size_d = self.args.batch_size
-        valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
-        fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
-        valid = np.ones(self.args.batch_size).reshape((self.args.batch_size, 1))
-        fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
-
         train_names = ['Generator_loss', 'Discriminator_loss']
-        batch_id = self.batch_iterator(0)  # flag for iteration number including the inner loops
+
+        print('Training...')
+
         for it in range(self.args.epoch):
-            # ------------------------------------
-            #         train generator
-            # ------------------------------------
-            for i in range(self.args.train_generator_times):
-                input_g, gt_g = \
-                    self.data.data_loader('train',
-                                          self.batch_iterator(batch_id),
-                                          self.args.batch_size,
-                                          self.args.norm_flag,
-                                          self.args.scale_factor)
-
-                loss_generator = self.gen.train_on_batch(input_g, gt_g)
-                gloss_record.append(loss_generator)
-            # ------------------------------------
-            #         train discriminator
-            # ------------------------------------
-            for i in range(self.args.train_discriminator_times):
-
-                input_d, gt_d = \
-                    self.data.data_loader('train',
-                                          self.batch_iterator(batch_id),
-                                          batch_size_d,
-                                          self.args.norm_flag,
-                                          self.args.scale_factor)
-
-                fake_input_d = self.gen.predict(input_d)
-
-                # discriminator loss separate for real/fake:
-                # https://stackoverflow.com/questions/49988496/loss-functions-in-gans
-
-                loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
-                loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
-                dloss_record.append(loss_discriminator[0])
+            loss_discriminator, loss_generator =\
+                self.train_gan()
             elapsed_time = datetime.datetime.now() - start_time
             print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
-                it + 1, elapsed_time, loss_discriminator[0], loss_discriminator[1], loss_generator))
+                it + 1,
+                elapsed_time,
+                loss_discriminator[0],
+                loss_discriminator[1],
+                loss_generator))
 
             if (it + 1) % self.args.sample_interval == 0:
                 self.validate(it + 1, sample=1)
 
             if (it + 1) % self.args.validate_interval == 0:
                 self.validate(it + 1, sample=0)
-                self.write_log(self.writer, train_names[0], np.mean(gloss_record), it + 1)
-                self.write_log(self.writer, train_names[1], np.mean(dloss_record), it + 1)
+                self.write_log(self.writer,
+                               train_names[0],
+                               np.mean(self.gloss_record),
+                               it + 1)
+                self.write_log(self.writer,
+                               train_names[1],
+                               np.mean(self.dloss_record),
+                               it + 1)
                 gloss_record = []
                 dloss_record = []
+
+    def train_gan(self):
+
+        batch_id = self.batch_iterator(0)
+
+        batch_size_d = self.args.batch_size
+        valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
+        fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
+        valid = np.ones(self.args.batch_size).reshape((self.args.batch_size, 1))
+        fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
+
+        # ------------------------------------
+        #         train generator
+        # ------------------------------------
+        for i in range(self.args.train_generator_times):
+            input_g, gt_g = \
+                self.data.data_loader('train',
+                                      self.batch_iterator(batch_id),
+                                      self.args.batch_size,
+                                      self.args.norm_flag,
+                                      self.args.scale_factor)
+            loss_generator = self.gen.train_on_batch(input_g, gt_g)
+            self.gloss_record.append(loss_generator)
+        # ------------------------------------
+        #         train discriminator
+        # ------------------------------------
+        for i in range(self.args.train_discriminator_times):
+            input_d, gt_d = \
+                self.data.data_loader('train',
+                                      self.batch_iterator(batch_id),
+                                      batch_size_d,
+                                      self.args.norm_flag,
+                                      self.args.scale_factor)
+
+            fake_input_d = self.gen.predict(input_d)
+
+            # discriminator loss separate for real/fake:
+            # https://stackoverflow.com/questions/49988496/loss-functions-in-gans
+
+            loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
+            loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
+            self.dloss_record.append(loss_discriminator[0])
+
+        return loss_discriminator, loss_generator
 
     def unrolling(self, x):
         net_input = x
@@ -380,21 +419,12 @@ class CAGAN(GAN):
     def generator_loss(self,
                        disc_generated_output):
         def gen_loss(y_true, y_pred):
-            w_gan = 1
-            w_l1 = 0
-            w_new = 10
             gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
                                         disc_generated_output)
 
-            # # Mean absolute error
-            l1_loss = tf.reduce_mean(tf.abs(y_true - y_pred))
-            new_loss = loss_mse_ssim_3d(y_true, y_pred)
+            total_gen_loss = gan_loss
 
-            total_gen_loss = (w_gan * gan_loss) +\
-                             (w_l1 * l1_loss) +\
-                             (w_new * new_loss)
             return total_gen_loss  # , gan_loss, l1_loss
-
         return gen_loss
 
     def batch_iterator(self, cnt, mode='train'):
@@ -419,4 +449,17 @@ def loss_mse_ssim_3d(y_true, y_pred):
     ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1)))
     mse_loss = mse_para * K.mean(K.square(y - x))
 
-    return mse_loss + ssim_loss
+    output = mse_loss + ssim_loss
+    return output
+
+
+def create_psf_loss(psf):
+    def loss_wf(y_true, y_pred):
+        # Wide field loss
+        x_wf = K.conv3d(y_pred, psf, padding='same')
+        x_wf = K.pool3d(x_wf, pool_size=(2, 2, 1), strides=(2, 2, 1), pool_mode="avg")
+        x_min = K.min(x_wf)
+        x_wf = (x_wf - x_min) / (K.max(x_wf) - x_min)
+        wf_loss = K.mean(K.square(y_true - x_wf))
+        return wf_loss
+    return loss_wf
