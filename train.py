@@ -32,19 +32,13 @@ def main():
                  'CGAN': CGAN,
                  'DNN': DNN,
                  'RCAN': RCAN}
-
-    # data = data_loader()
-    # x_train, y_train = \
-    # data_loader_multi_channel_3d(images_path, train_images_path, train_gt_path,
-    #                              patch_y, patch_x, patch_z, batch_size_d,
-    #                              norm_flag=norm_flag)
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
 
     # build graph
     dnn.build_model()
 
-    # # show network architecture
+    # show network architecture
     # show_all_variables()
     #
     # launch the graph in a session
