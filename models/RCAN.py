@@ -23,7 +23,7 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --epoch 100 --dnn_type RCAN
+    python -m train --dnn_type RCAN --epoch 100 --sample_interval 10 --validate_interval 20
 
 """
 import datetime
