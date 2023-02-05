@@ -1,22 +1,18 @@
 """
     author: SPDKH
-    date: Nov 2, 2022
+    date: Nov 2, 2023
 """
-
 
 import sys
 
 import tensorflow as tf
-from tensorflow.keras.models import Model
 
 # ________________ architecture Variants
-from models.CGAN import CGAN
 from models.CAGAN import CAGAN
+from models.CGAN import CGAN
 from models.DNN import DNN
-
-from utils.fcns import show_all_variables
+from models.RCAN import RCAN
 from utils.config import parse_args
-from utils.data_loader import data_loader
 
 
 def main():
@@ -34,8 +30,8 @@ def main():
     # open session
     model_fns = {'CAGAN': CAGAN,
                  'CGAN': CGAN,
-                 'DNN': DNN}
-
+                 'DNN': DNN,
+                 'RCAN': RCAN}
 
     # data = data_loader()
     # x_train, y_train = \

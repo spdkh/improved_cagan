@@ -6,3 +6,4 @@
 /checkpoint
 *__pycache__*
 /logs
+.vscode/
