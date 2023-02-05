@@ -46,7 +46,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument('--dnn_type', type=str, default='CAGAN',
-                        choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN'],
+                        choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
     parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
                         help='The directory of the data')

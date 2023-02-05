@@ -22,7 +22,8 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
   Yulun Zhang, Kunpeng Li, Kai Li, Lichen Wang, Bineng Zhong, Yun Fu
 
 Example usage:
-  python -m train --epoch 100 --dnn_type RCAN
+    conda activate tf_gpu
+    python -m train --epoch 100 --dnn_type RCAN
 
 """
 import datetime
