@@ -23,7 +23,10 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --dnn_type RCAN --epoch 100 --sample_interval 10 --validate_interval 20
+    python -m train --dnn_type RCAN --epoch 1000 --sample_interval 10 --validate_interval 20
+
+Experiment 01: Use 3.5 Implementation Details
+    --n_ResGroup 10 --n_RCAB 20 --checkpoint_dir experiment01
 
 """
 import datetime
@@ -37,7 +40,6 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
 from data.fixed_cell import FixedCell
-from models.CAGAN import loss_mse_ssim_3d
 from models.DNN import DNN
 from models.super_resolution import rcan
 from utils.fcns import img_comp
@@ -60,11 +62,16 @@ class RCAN(DNN):
             os.path.join(self.data.log_path, "val"))
         self.lr_controller = None
 
-        self.loss_object = loss_mse_ssim_3d
+        # self.loss_object = loss_mse_ssim_3d
+        self.loss_object = tf.keras.losses.MeanAbsoluteError()
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
-        output = rcan(self.input)
+        output = rcan(
+            self.input, scale=2,
+            channel=self.args.n_channel,
+            n_res_group=self.args.n_ResGroup,
+            n_rcab=self.args.n_RCAB)
         self.model = Model(inputs=self.input, outputs=output)
 
         for layer in self.model.layers:
@@ -90,6 +97,7 @@ class RCAN(DNN):
         if data_size // self.args.batch_size > cnt:
             self.batch_id[mode] = 1 + cnt
             return self.batch_id[mode]
+
         self.batch_id[mode] = 0
         return self.batch_id[mode]
 
@@ -99,20 +107,22 @@ class RCAN(DNN):
         loss_record = []
 
         train_names = ['Generator_loss']
-        batch_id = self.batch_iterator(0)  # flag for iteration number including the inner loops
 
         for it in range(self.args.epoch):
+            # batch_id flag for iteration number including the inner loops
+            temp_loss = []
+            for batch_id in range(self.batch_iterator(0), 128):
+                input_g, gt_g = self.data.data_loader(
+                    'train',
+                    self.batch_iterator(batch_id),
+                    self.args.batch_size,
+                    self.args.norm_flag,
+                    self.args.scale_factor
+                )
 
-            input_g, gt_g = self.data.data_loader(
-                'train',
-                self.batch_iterator(batch_id),
-                self.args.batch_size,
-                self.args.norm_flag,
-                self.args.scale_factor
-            )
-
-            loss = self.model.train_on_batch(input_g, gt_g)
-            loss_record.append(loss)
+                loss = self.model.train_on_batch(input_g, gt_g)
+                temp_loss.append(loss)
+            loss_record.append(np.mean(temp_loss))
 
             elapsed_time = datetime.datetime.now() - start_time
             print(f"{it + 1} epoch: time: {elapsed_time}, loss = {loss}")
