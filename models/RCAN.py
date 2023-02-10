@@ -32,6 +32,7 @@ Experiment 01: Use 3.5 Implementation Details
 import datetime
 import glob
 import os
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -67,11 +68,13 @@ class RCAN(DNN):
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
+        sys.setrecursionlimit(10 ** 4)
         output = rcan(
             self.input, scale=2,
             channel=self.args.n_channel,
             n_res_group=self.args.n_ResGroup,
             n_rcab=self.args.n_RCAB)
+        # print(output)
         self.model = Model(inputs=self.input, outputs=output)
 
         for layer in self.model.layers:
@@ -111,7 +114,12 @@ class RCAN(DNN):
         for it in range(self.args.epoch):
             # batch_id flag for iteration number including the inner loops
             temp_loss = []
-            for batch_id in range(self.batch_iterator(0), 128):
+            for b_id in range(128):
+                batch_id = self.batch_iterator(b_id)
+                if batch_id == 0:
+                    print(batch_id, "is zero.")
+                    break
+                
                 input_g, gt_g = self.data.data_loader(
                     'train',
                     self.batch_iterator(batch_id),
