@@ -6,6 +6,7 @@ import glob
 import numpy as np
 from data.data import Data
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from utils import fcns
 from skimage.measure import block_reduce
 from matplotlib import pyplot as plt
@@ -14,14 +15,14 @@ import tifffile as tiff
 from utils.fcns import prctile_norm, fix_path, reorder
 
 
-class FixedCell(Data):
+class FairSIM(Data):
     def __init__(self, args):
         Data.__init__(self, args)
         self.data_groups = {'train': 'training',
                             'test': 'testing',
                             'val': 'validation'}
 
-        self.data_types = {'x': 'rawdata', 'y': 'gt'}
+        self.data_types = {'x': 'raw_data', 'y': 'gt'}
         self.args.data_dir = fcns.fix_path(self.args.data_dir)
         input_dir = os.path.join(self.args.data_dir,
                                  self.data_groups['train'],
@@ -39,7 +40,7 @@ class FixedCell(Data):
         self.output_dim = self.load_sample(out_sample_dir, 1)
         print('output', self.output_dim)
 
-        save_weights_name = 'SIM_fixed_cell'
+        save_weights_name = 'FairSIM'
 
         self.save_weights_path = os.path.join(self.args.checkpoint_dir,
                                               save_weights_name)

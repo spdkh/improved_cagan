@@ -7,16 +7,13 @@
 import sys
 
 import tensorflow as tf
-from tensorflow.keras.models import Model
 
 # ________________ architecture Variants
 from models.CGAN import CGAN
 from models.CAGAN import CAGAN
 from models.DNN import DNN
 
-from utils.fcns import show_all_variables
 from utils.config import parse_args
-from utils.data_loader import data_loader
 
 
 def main():

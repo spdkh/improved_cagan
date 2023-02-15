@@ -49,16 +49,13 @@ def parse_args():
     parser.add_argument('--dnn_type', type=str, default='CAGAN',
                         choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN'],
                         help='The type of GAN', required=False)
-    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FairSIM\\cropped2d_128\\",
                         help='The directory of the data')
-    # parser.add_argument('--patch_dim', nargs='+', default=[128, 128, 1, 15],
-    #                     help='Dimension of the patches followed by number of channels')
-    parser.add_argument("--scale_factor", type=int, default=2)
     parser.add_argument("--norm_flag", type=int, default=1)
-    parser.add_argument('--epoch', type=int, default=5000, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=100)
-    parser.add_argument("--validate_interval", type=int, default=200)
-    parser.add_argument("--validate_num", type=int, default=200)
+    parser.add_argument('--epoch', type=int, default=500, help='The number of epochs to run')
+    parser.add_argument("--sample_interval", type=int, default=10)
+    parser.add_argument("--validate_interval", type=int, default=20)
+    parser.add_argument("--validate_num", type=int, default=20)
     parser.add_argument('--batch_size', type=int, default=4,
                         help='The size of batch')
 

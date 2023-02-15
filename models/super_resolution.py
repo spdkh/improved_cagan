@@ -79,7 +79,6 @@ def res_group(net_input, channel, n_RCAB):
 
 
 def rcan(net_input, scale=2, channel=64, n_res_group=3, n_rcab=5):
-
     conv = Conv3D(channel, kernel_size=3, padding='same')(net_input)
     for _ in range(n_res_group):
         conv = res_group(conv, channel=channel, n_RCAB=n_rcab)

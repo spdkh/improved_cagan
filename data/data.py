@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import tifffile as tiff
+from matplotlib import pyplot as plt
 
 
 class Data(ABC):
@@ -9,21 +10,21 @@ class Data(ABC):
         self.args = args
         super().__init__()
 
-    def load_sample(self, path):
+    def load_sample(self, path, show=0):
         """
-        todo: convert any type of data to [x, y, z, ch] then return dimension
+        convert any type of data to [x, y, z, ch] then return dimension
         """
         img = np.transpose(tiff.imread(path), (1, 2, 0))
+        img_size = list(np.shape(img))
+        if len(img_size) == 3:
+            img_size.insert(2, 1)
 
-        # plt.imshow(img)
-        # plt.show()
-        in_size = list(np.shape(img))
-        n_channels = self.args.n_phases * self.args.n_angles
-        in_size[0] //= self.args.scale_factor
-        in_size[1] //= self.args.scale_factor
+        if show:
+            plt.figure()
+            plt.imshow(img[:, :, 0])
+            plt.show()
 
-        in_size.append(n_channels)
-        return in_size
+        return img_size
 
     # def load_psf(self):
     # --------------------------------------------------------------------------------

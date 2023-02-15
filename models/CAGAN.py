@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-todo: write
 """
 
 from utils.lr_controller import ReduceLROnPlateau
-from data.fixed_cell import FixedCell
+from data.fairsim import FairSIM
 from models.GAN import GAN
 from models.binary_classification import discriminator
 from models.super_resolution import rcan
 
 import datetime
 import glob
+import os
 
 from tensorflow.keras import backend as K
 
@@ -25,6 +25,7 @@ from skimage.metrics import mean_squared_error as compare_mse, \
     structural_similarity as compare_ssim
 from matplotlib import pyplot as plt
 import matplotlib
+
 matplotlib.use('Agg')
 
 
@@ -32,10 +33,11 @@ class CAGAN(GAN):
     """
 
     """
+
     def __init__(self, args):
         GAN.__init__(self, args)
         print('CAGAN')
-        self.data = FixedCell(self.args)
+        self.data = FairSIM(self.args)
         self.g_input = Input(self.data.input_dim)
         self.d_input = Input(self.data.output_dim)
 
@@ -56,6 +58,8 @@ class CAGAN(GAN):
         self.lr_controller_d = None
         self.dloss_record = []
         self.gloss_record = []
+        self.scale_factor = int(self.data.output_dim[0] / \
+                                self.data.input_dim[0])
 
     def build_model(self):
         """
@@ -66,7 +70,7 @@ class CAGAN(GAN):
         # --------------------------------------------------------------------------------
         self.disc, self.frozen_d = self.discriminator()
 
-        self.gen = self.generator()
+        self.gen = self.generator(self.g_input)
         # print(self.gen.summary())
 
         fake_hp = self.gen(inputs=self.g_input)
@@ -82,22 +86,9 @@ class CAGAN(GAN):
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
-
         self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=self.args.g_opt,
                          loss_weights=[1, 0.1, self.args.weight_wf_loss])
-
-        # if weight_wf_loss > 0:
-        #     combined = Model(input_lp, [judge, fake_hp, fake_hp])
-        #     loss_wf = create_psf_loss(psf)
-        #     combined.compile(loss=['binary_crossentropy', loss_mse_ssim_3d, loss_wf],
-        #                      optimizer=optimizer_g,
-        #                      loss_weights=[0.1, 1, weight_wf_loss])  # 0.1 1
-        # else:
-        #     combined = Model(input_lp, [judge, fake_hp])
-        #     combined.compile(loss=['binary_crossentropy', loss_mse_ssim_3d],
-        #                      optimizer=optimizer_g,
-        #                      loss_weights=[0.1, 1])  # 0.1 1
 
         self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
                                                  factor=self.args.lr_decay_factor,
@@ -117,6 +108,25 @@ class CAGAN(GAN):
                                                  min_learning_rate=self.args.d_start_lr * 0.1,
                                                  verbose=1)
 
+        # checkpoint_dir = './training_checkpoints'
+        # checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+        # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.g_opt,
+        #                                  discriminator_optimizer=self.args.d_opt,
+        #                                  generator=self.gen,
+        #                                  discriminator=self.disc)
+        # --------------------------------------------------------------------------------
+        #                             if exist, load weights
+        # --------------------------------------------------------------------------------
+        # if self.args.load_weights:
+        #     if os.path.exists(save_weights_path + 'weights_best.h5'):
+        #         combined.save_weights(save_weights_path + 'weights_best.h5')
+        #         d.save_weights(save_weights_path + 'weights_disc_best.h5')
+        #         print('Loading weights successfully: ' + save_weights_path + 'weights_best.h5')
+        #     elif os.path.exists(save_weights_path + 'weights_latest.h5'):
+        #         combined.save_weights(save_weights_path + 'weights_latest.h5')
+        #         d.save_weights(save_weights_path + 'weights_disc_latest.h5')
+        #         print('Loading weights successfully: ' + save_weights_path + 'weights_latest.h5')
+
     def train(self):
         """
 
@@ -128,7 +138,7 @@ class CAGAN(GAN):
         print('Training...')
 
         for it in range(self.args.epoch):
-            loss_discriminator, loss_generator =\
+            loss_discriminator, loss_generator = \
                 self.train_gan()
             elapsed_time = datetime.datetime.now() - start_time
             print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
@@ -155,7 +165,10 @@ class CAGAN(GAN):
                 dloss_record = []
 
     def train_gan(self):
-
+        """
+        todo: disc part is absolutely wrong: use pix2pix code instead
+            https://www.tensorflow.org/tutorials/generative/pix2pix
+        """
         batch_id = self.batch_iterator(0)
 
         batch_size_d = self.args.batch_size
@@ -165,27 +178,20 @@ class CAGAN(GAN):
         fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
 
         # ------------------------------------
-        #         train generator
-        # ------------------------------------
-        for i in range(self.args.train_generator_times):
-            input_g, gt_g = \
-                self.data.data_loader('train',
-                                      self.batch_iterator(batch_id),
-                                      self.args.batch_size,
-                                      self.args.norm_flag,
-                                      self.args.scale_factor)
-            loss_generator = self.gen.train_on_batch(input_g, gt_g)
-            self.gloss_record.append(loss_generator)
-        # ------------------------------------
         #         train discriminator
         # ------------------------------------
         for i in range(self.args.train_discriminator_times):
-            input_d, gt_d = \
+            # todo:  Question: is this necessary? (reloading the data for disc) :
+            #       I think yes
+            # todo: Question: should they be the same samples? (They already are):
+            #       I think they should not
+            input_d, gt_d, wf_d = \
                 self.data.data_loader('train',
                                       self.batch_iterator(batch_id),
                                       batch_size_d,
                                       self.args.norm_flag,
-                                      self.args.scale_factor)
+                                      self.scale_factor,
+                                      self.args.weight_wf_loss)
 
             fake_input_d = self.gen.predict(input_d)
 
@@ -196,18 +202,30 @@ class CAGAN(GAN):
             loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
             self.dloss_record.append(loss_discriminator[0])
 
+        # ------------------------------------
+        #         train generator
+        # ------------------------------------
+        for i in range(self.args.train_generator_times):
+            input_g, gt_g, wf_d = \
+                self.data.data_loader('train',
+                                      self.batch_iterator(batch_id),
+                                      self.args.batch_size,
+                                      self.args.norm_flag,
+                                      self.scale_factor,
+                                      self.args.weight_wf_loss)
+            loss_generator = self.gen.train_on_batch(input_g, gt_g)
+            self.gloss_record.append(loss_generator)
         return loss_discriminator, loss_generator
 
     def unrolling(self, x):
         net_input = x
-        for iteration in range(self.unrolling_iter):
+        for ui in range(self.unrolling_iter):
             x = self.sr_cnn(net_input)
             net_input = x
         return x
 
     def validate(self, epoch, sample=0):
         """
-                todo: complete
                 :param epoch:
                 :param sample:
                 :return:
@@ -251,12 +269,12 @@ class CAGAN(GAN):
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
         imgs, imgs_gt, output = [], [], []
         # for path in validate_path:
-        imgs, imgs_gt = \
+        imgs, imgs_gt, wf_batch = \
             self.data.data_loader('val',
                                   self.batch_iterator(epoch - 1, 'val'),
                                   self.args.batch_size,
                                   self.args.norm_flag,
-                                  self.args.scale_factor)
+                                  self.scale_factor)
 
         outputs = self.gen.predict(imgs)
         for output, img_gt in zip(outputs, imgs_gt):
@@ -406,25 +424,24 @@ class CAGAN(GAN):
 
         frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
         frozen_disc.trainable = False
+
+        tf.keras.utils.plot_model(disc, show_shapes=True, dpi=64)
         return disc, frozen_disc
 
-    def generator(self):
-        self.g_output = rcan(self.g_input)
+    def generator(self, input):
+        self.g_output = rcan(input)
 
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-
+        tf.keras.utils.plot_model(gen, show_shapes=True, dpi=64)
         return gen
 
-    def generator_loss(self,
-                       disc_generated_output):
+    def generator_loss(self, disc_generated_output):
         def gen_loss(y_true, y_pred):
             gan_loss = self.loss_object(tf.ones_like(disc_generated_output),
                                         disc_generated_output)
+            return gan_loss
 
-            total_gen_loss = gan_loss
-
-            return total_gen_loss  # , gan_loss, l1_loss
         return gen_loss
 
     def batch_iterator(self, cnt, mode='train'):
@@ -462,4 +479,5 @@ def create_psf_loss(psf):
         x_wf = (x_wf - x_min) / (K.max(x_wf) - x_min)
         wf_loss = K.mean(K.square(y_true - x_wf))
         return wf_loss
+
     return loss_wf

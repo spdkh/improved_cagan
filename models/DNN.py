@@ -5,19 +5,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import os
-import glob
 import re
 from abc import ABC, abstractmethod
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
-
-import matplotlib.pyplot as plt
 
 from data.data import Data
-from utils.data_loader import data_loader
 
 
 class DNN(ABC):
