@@ -46,5 +46,5 @@ class Data(ABC):
     #     psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
     #     psf = np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)
 
-    def data_loader(self):
-        pass
+    # def data_loader(self):
+    #     pass

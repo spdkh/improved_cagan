@@ -26,7 +26,7 @@ Example usage:
     python -m train --dnn_type RCAN --epoch 1000 --sample_interval 10 --validate_interval 20
 
 Experiment 01: Use 3.5 Implementation Details
-    --n_ResGroup 10 --n_RCAB 20 --checkpoint_dir experiment01
+    --n_ResGroup 8 --n_RCAB 16 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
 
 """
 import datetime
@@ -41,6 +41,7 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
 from data.fixed_cell import FixedCell
+from data.fair_sim import FairSIM
 from models.DNN import DNN
 from models.super_resolution import rcan
 from utils.fcns import img_comp
@@ -52,7 +53,10 @@ class RCAN(DNN):
         DNN.__init__(self, args)
         print('Init RCAN!')
 
-        self.data = FixedCell(self.args)
+        if "FixedCell" in self.args.data_dir:
+            self.data = FixedCell(self.args)
+        elif "FairSIM" in self.args.data_dir:
+            self.data = FairSIM(self.args)
 
         self.input = Input(self.data.input_dim)
         self.output = self.data.output_dim
@@ -117,9 +121,9 @@ class RCAN(DNN):
             for b_id in range(128):
                 batch_id = self.batch_iterator(b_id)
                 if batch_id == 0:
-                    print(batch_id, "is zero.")
+                    # print(b_id, "is zero.")
                     break
-                
+
                 input_g, gt_g = self.data.data_loader(
                     'train',
                     self.batch_iterator(batch_id),
