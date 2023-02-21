@@ -19,7 +19,7 @@ from data.fixed_cell import FixedCell
 from utils import fcns
 
 
-class FairSIM(Data, FixedCell):
+class FairSIM(FixedCell):
     def __init__(self, args):
         Data.__init__(self, args)
         self.data_groups = {'train': 'training',

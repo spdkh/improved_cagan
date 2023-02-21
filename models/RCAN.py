@@ -26,7 +26,7 @@ Example usage:
     python -m train --dnn_type RCAN --epoch 1000 --sample_interval 10 --validate_interval 20
 
 Experiment 01: Use 3.5 Implementation Details
-    --n_ResGroup 8 --n_RCAB 16 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
+    --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
 
 """
 import datetime
@@ -118,7 +118,7 @@ class RCAN(DNN):
         for it in range(self.args.epoch):
             # batch_id flag for iteration number including the inner loops
             temp_loss = []
-            for b_id in range(128):
+            for b_id in range(8):
                 batch_id = self.batch_iterator(b_id)
                 if batch_id == 0:
                     # print(b_id, "is zero.")
