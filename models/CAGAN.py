@@ -329,8 +329,9 @@ class CAGAN(GAN):
 
             # figures equal to the number of z patches in columns
             for j in range(patch_z):
+                validation_id = 1
                 output_results = {'Raw Input': imgs[0, :, :, j, 0],
-                                  'Super Resolution Output': np.array(outputs[0, :, :, j, 0]) / 65535,
+                                  'Super Resolution Output': np.array(outputs[validation_id, :, :, j, 0]) / np.max(outputs[validation_id, :, :, j, 0]),
                                   'Ground Truth': imgs_gt[0, :, :, j, 0]}
 
                 plt.title('Z = ' + str(j))

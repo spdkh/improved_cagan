@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import tifffile as tiff
 from matplotlib import pyplot as plt
+import matplotlib
 
 
 class Data(ABC):
@@ -16,8 +17,11 @@ class Data(ABC):
         """
         img = np.transpose(tiff.imread(path), (1, 2, 0))
         img_size = list(np.shape(img))
-        if len(img_size) == 3:
-            img_size.insert(2, 1)
+        if img_size[-1]%(self.args.n_phases * self.args.n_angles) == 0:
+            img_size[-1] = img_size[-1]//(self.args.n_phases * self.args.n_angles)
+            img_size.append(self.args.n_phases * self.args.n_angles)
+        else:
+            img_size.append(1)
 
         if show:
             plt.figure()
