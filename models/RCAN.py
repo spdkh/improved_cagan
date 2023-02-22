@@ -85,8 +85,13 @@ class RCAN(DNN):
             print(layer.output_shape)
         print(self.output)
 
+        if self.args.g_opt == "adam":
+            opt = tf.keras.optimizers.Adam(self.args.g_start_lr, clipnorm=10.0)
+        else:
+            opt = self.args.g_opt
+
         self.model.compile(loss=self.loss_object,
-                           optimizer=self.args.g_opt)
+                           optimizer=opt)
 
         self.lr_controller = ReduceLROnPlateau(
             model=self.model,
