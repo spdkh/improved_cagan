@@ -23,10 +23,15 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --dnn_type RCAN --epoch 1000 --sample_interval 10 --validate_interval 20
+    python -m train --dnn_type RCAN --epoch 400 --sample_interval 10 --validate_interval 20
 
 Experiment 01: Use 3.5 Implementation Details
     --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
+
+Experiment 03:
+    --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment03 --data_dir D:\Data\FixedCell\PFA_eGFP\cropped3d_128_3
+
+tensorboard --logdir=
 
 """
 import datetime
@@ -44,6 +49,7 @@ from data.fixed_cell import FixedCell
 from data.fair_sim import FairSIM
 from models.DNN import DNN
 from models.super_resolution import rcan
+from utils.autoclip_tf import AutoClipper
 from utils.fcns import img_comp
 from utils.lr_controller import ReduceLROnPlateau
 
@@ -86,7 +92,11 @@ class RCAN(DNN):
         print(self.output)
 
         if self.args.g_opt == "adam":
-            opt = tf.keras.optimizers.Adam(self.args.g_start_lr, clipnorm=10.0)
+            opt = tf.keras.optimizers.Adam(
+                self.args.g_start_lr,
+                # clipnorm=10.0,
+                gradient_transformers=[AutoClipper(10)]
+            )
         else:
             opt = self.args.g_opt
 
