@@ -4,9 +4,8 @@
     parsing and configuration
     todo: revise
 """
-import random
-
 import argparse
+import random
 
 from utils.fcns import check_folder
 
@@ -47,7 +46,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument('--dnn_type', type=str, default='CAGAN',
-                        choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN'],
+                        choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
     parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
                         help='The directory of the data')
@@ -82,6 +81,7 @@ def parse_args():
     parser.add_argument("--wave_len", type=int, default=525)
     parser.add_argument("--n_ResGroup", type=int, default=3)
     parser.add_argument("--n_RCAB", type=int, default=5)
+    parser.add_argument("--n_channel", type=int, default=64)
 
     parser.add_argument("--n_phases", type=int, default=5)
     parser.add_argument("--n_angles", type=int, default=3)
