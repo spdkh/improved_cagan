@@ -45,8 +45,8 @@ from matplotlib import pyplot as plt
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
-from data.fixed_cell import FixedCell
 from data.fair_sim import FairSIM
+from data.fixed_cell import FixedCell
 from models.DNN import DNN
 from models.super_resolution import rcan
 from utils.autoclip_tf import AutoClipper
@@ -113,6 +113,20 @@ class RCAN(DNN):
             min_learning_rate=self.args.g_start_lr * 0.01,
             verbose=1,
         )
+
+        if os.path.exists(self.data.save_weights_path + "weights_best.h5"):
+            self.model.load_weights(self.data.save_weights_path + "weights_best.h5")
+            print(
+                "Loading weights successfully: "
+                + self.data.save_weights_path + "weights_best.h5"
+            )
+        elif os.path.exists(self.data.save_weights_path + "weights_latest.h5"):
+            self.model.load_weights(self.data.save_weights_path + "weights_latest.h5")
+            print(
+                "Loading weights successfully: "
+                + self.data.save_weights_path
+                + "weights_latest.h5"
+            )
 
     def batch_iterator(self, cnt, mode='train'):
         data_size = len(self.data.data_dirs['x' + mode])
