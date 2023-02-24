@@ -2,7 +2,6 @@
     author: SPDKH
     todo: complete
 """
-# -*- coding: utf-8 -*-
 from __future__ import division
 import os
 import re
@@ -93,7 +92,6 @@ class DNN(ABC):
 
     def load(self, checkpoint_dir):
         """
-        todo: add a function to generate the final checkpoint dir
         todo: test
         source: https://www.tensorflow.org/tutorials/keras/save_and_load
 
@@ -106,7 +104,9 @@ class DNN(ABC):
 
         """
         print(" [*] Reading checkpoints...")
-        checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir, self.model_name)
+        checkpoint_dir = os.path.join(checkpoint_dir,
+                                      self.model_dir,
+                                      self.model_name)
         latest = tf.train.latest_checkpoint(checkpoint_dir)
 
         if checkpoint_dir:

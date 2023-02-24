@@ -4,13 +4,15 @@
 
 from utils.lr_controller import ReduceLROnPlateau
 from data.fairsim import FairSIM
+from data.fixed_cell import FixedCell
+
 from models.GAN import GAN
 from models.binary_classification import discriminator
 from models.super_resolution import rcan
+from utils.fcns import check_folder
 
 import datetime
 import glob
-import os
 
 from tensorflow.keras import backend as K
 
@@ -24,9 +26,6 @@ from skimage.metrics import mean_squared_error as compare_mse, \
     peak_signal_noise_ratio as compare_psnr, \
     structural_similarity as compare_ssim
 from matplotlib import pyplot as plt
-import matplotlib
-
-matplotlib.use('Agg')
 
 
 class CAGAN(GAN):
@@ -36,8 +35,10 @@ class CAGAN(GAN):
 
     def __init__(self, args):
         GAN.__init__(self, args)
-        print('CAGAN')
-        self.data = FairSIM(self.args)
+
+        datasets = {'FixedCell': FixedCell,
+                    'FairSIM': FairSIM}
+        self.data = datasets[self.args.dataset](self.args)
         self.g_input = Input(self.data.input_dim)
         self.d_input = Input(self.data.output_dim)
 
@@ -60,6 +61,7 @@ class CAGAN(GAN):
         self.gloss_record = []
         self.scale_factor = int(self.data.output_dim[0] / \
                                 self.data.input_dim[0])
+        self.disc_opt = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
     def build_model(self):
         """
@@ -108,6 +110,7 @@ class CAGAN(GAN):
                                                  min_learning_rate=self.args.d_start_lr * 0.1,
                                                  verbose=1)
 
+        self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         # checkpoint_dir = './training_checkpoints'
         # checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.g_opt,
@@ -141,11 +144,10 @@ class CAGAN(GAN):
             loss_discriminator, loss_generator = \
                 self.train_gan()
             elapsed_time = datetime.datetime.now() - start_time
-            print("%d epoch: time: %s, d_loss = %.5s, d_acc = %.5s, g_loss = %s" % (
+            print("%d epoch: time: %s, d_loss = %.5s, g_loss = %s" % (
                 it + 1,
                 elapsed_time,
-                loss_discriminator[0],
-                loss_discriminator[1],
+                loss_discriminator,
                 loss_generator))
 
             if (it + 1) % self.args.sample_interval == 0:
@@ -174,22 +176,19 @@ class CAGAN(GAN):
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
-        valid = np.ones(self.args.batch_size).reshape((self.args.batch_size, 1))
-        fake = np.zeros(self.args.batch_size).reshape((self.args.batch_size, 1))
 
         # ------------------------------------
         #         train discriminator
         # ------------------------------------
         for i in range(self.args.train_discriminator_times):
             # todo:  Question: is this necessary? (reloading the data for disc) :
-            #       I think yes
-            # todo: Question: should they be the same samples? (They already are):
-            #       I think they should not
+            #       I think yes: update: I dont think so
+            # todo: Question: should they be the same samples? absolutely yes(They already are):
+            #       I think they should not : update: this is wrong: they should
             input_d, gt_d, wf_d = \
                 self.data.data_loader('train',
                                       self.batch_iterator(batch_id),
                                       batch_size_d,
-                                      self.args.norm_flag,
                                       self.scale_factor,
                                       self.args.weight_wf_loss)
 
@@ -198,24 +197,42 @@ class CAGAN(GAN):
             # discriminator loss separate for real/fake:
             # https://stackoverflow.com/questions/49988496/loss-functions-in-gans
 
-            loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
-            loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
-            self.dloss_record.append(loss_discriminator[0])
+            # loss_discriminator = self.disc.train_on_batch(gt_d, valid_d)
+            # loss_discriminator += self.disc.train_on_batch(fake_input_d, fake_d)
+
+            with tf.GradientTape() as disc_tape:
+                disc_real_output = self.disc(gt_d)
+                disc_fake_output = self.disc(fake_input_d)
+                disc_loss = self.discriminator_loss(disc_real_output,
+                                                    disc_fake_output)
+
+            disc_gradients = disc_tape.gradient(disc_loss,
+                                                self.disc.trainable_variables)
+
+            self.disc_opt.apply_gradients(zip(disc_gradients,
+                                              self.disc.trainable_variables))
+
+            self.dloss_record.append(disc_loss)
+
+            # loss_disc_real = -tf.reduce_mean(tf.log(gt_d, valid_d))  # maximise
+            # loss_disc_fake = -tf.reduce_mean(tf.log(fake_input_d, fake_d))
+            # loss_disc = loss_disc_fake + loss_disc_real
+
+            # train_disc = tf.train(self.lr_controller_d).minimize(loss_disc)
 
         # ------------------------------------
         #         train generator
         # ------------------------------------
         for i in range(self.args.train_generator_times):
-            input_g, gt_g, wf_d = \
-                self.data.data_loader('train',
-                                      self.batch_iterator(batch_id),
-                                      self.args.batch_size,
-                                      self.args.norm_flag,
-                                      self.scale_factor,
-                                      self.args.weight_wf_loss)
-            loss_generator = self.gen.train_on_batch(input_g, gt_g)
+            # input_g, gt_g, wf_d = \
+            #     self.data.data_loader('train',
+            #                           self.batch_iterator(batch_id),
+            #                           self.args.batch_size,
+            #                           self.scale_factor,
+            #                           self.args.weight_wf_loss)
+            loss_generator = self.gen.train_on_batch(input_d, gt_d)
             self.gloss_record.append(loss_generator)
-        return loss_discriminator, loss_generator
+        return disc_loss, loss_generator
 
     def unrolling(self, x):
         net_input = x
@@ -260,11 +277,10 @@ class CAGAN(GAN):
         #
         # save_weights_path = os.path.join(self.args.checkpoint_dir, save_weights_name)
         # sample_path = save_weights_path + 'sampled_img/'
-        #
-        # if not os.path.exists(save_weights_path):
-        #     os.mkdir(save_weights_path)
-        # if not os.path.exists(sample_path):
-        #     os.mkdir(sample_path)
+
+        # check_folder(save_weights_path)
+
+        # check_folder(sample_path)
 
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
         imgs, imgs_gt, output = [], [], []
@@ -273,7 +289,6 @@ class CAGAN(GAN):
             self.data.data_loader('val',
                                   self.batch_iterator(epoch - 1, 'val'),
                                   self.args.batch_size,
-                                  self.args.norm_flag,
                                   self.scale_factor)
 
         outputs = self.gen.predict(imgs)
@@ -313,14 +328,14 @@ class CAGAN(GAN):
 
             validate_nrmse.append(np.mean(nrmses))
             curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
-            curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
+            # curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
             self.write_log(self.writer, val_names[0], np.mean(mses), epoch)
             self.write_log(self.writer, val_names[1], np.mean(ssims), epoch)
             self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
             self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
             self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
             self.write_log(self.writer, 'lr_g', curlr_g, epoch)
-            self.write_log(self.writer, 'lr_d', curlr_d, epoch)
+            # self.write_log(self.writer, 'lr_d', curlr_d, epoch)
 
         else:
 
@@ -331,7 +346,8 @@ class CAGAN(GAN):
             for j in range(patch_z):
                 validation_id = 1
                 output_results = {'Raw Input': imgs[0, :, :, j, 0],
-                                  'Super Resolution Output': np.array(outputs[validation_id, :, :, j, 0]) / np.max(outputs[validation_id, :, :, j, 0]),
+                                  'Super Resolution Output': np.array(outputs[validation_id, :, :, j, 0]) / np.max(
+                                      outputs[validation_id, :, :, j, 0]),
                                   'Ground Truth': imgs_gt[0, :, :, j, 0]}
 
                 plt.title('Z = ' + str(j))
@@ -419,9 +435,9 @@ class CAGAN(GAN):
 
         disc = Model(inputs=self.d_input,
                      outputs=self.d_output)
-        disc.compile(loss='binary_crossentropy',
-                     optimizer=self.args.d_opt,
-                     metrics=['accuracy'])
+        # disc.compile(loss='binary_crossentropy',
+        #              optimizer=self.args.d_opt,
+        #              metrics=['accuracy'])
 
         frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
         frozen_disc.trainable = False
@@ -429,9 +445,8 @@ class CAGAN(GAN):
         tf.keras.utils.plot_model(disc, show_shapes=True, dpi=64)
         return disc, frozen_disc
 
-    def generator(self, input):
-        self.g_output = rcan(input)
-
+    def generator(self, g_input):
+        self.g_output = rcan(g_input)
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
         tf.keras.utils.plot_model(gen, show_shapes=True, dpi=64)

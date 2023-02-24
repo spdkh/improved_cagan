@@ -2,17 +2,14 @@
     author: SPDKH
     date: Nov 2, 2022
 """
-
-
 import sys
-
 import tensorflow as tf
 
 # ________________ architecture Variants
 from models.CGAN import CGAN
 from models.CAGAN import CAGAN
+from models.UCAGAN import UCAGAN
 from models.DNN import DNN
-
 from utils.config import parse_args
 
 
@@ -31,7 +28,8 @@ def main():
     # open session
     model_fns = {'CAGAN': CAGAN,
                  'CGAN': CGAN,
-                 'DNN': DNN}
+                 'DNN': DNN,
+                 'UCAGAN': UCAGAN}
 
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
