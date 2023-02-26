@@ -95,8 +95,8 @@ class RCAN(DNN):
                 data = json.load(f1)
                 self.initial_epoch = data["epoch"]
 
-            with open(self.data.save_weights_path + 'lr_controller.pkl', 'rb') as f1:
-                self.lr_controller = pickle.load(f1)
+            # with open(self.data.save_weights_path + 'lr_controller.pkl', 'rb') as f1:
+            #     self.lr_controller = pickle.load(f1)
 
             print(
                 "Loading weights successfully: "
@@ -131,16 +131,16 @@ class RCAN(DNN):
             self.model.compile(loss=self.loss_object,
                                optimizer=opt)
 
-            self.lr_controller = ReduceLROnPlateau(
-                model=self.model,
-                factor=self.args.lr_decay_factor,
-                patience=3,
-                mode="min",
-                min_delta=1e-2,
-                cooldown=0,
-                min_learning_rate=self.args.g_start_lr * 0.001,
-                verbose=1,
-            )
+        self.lr_controller = ReduceLROnPlateau(
+            model=self.model,
+            factor=self.args.lr_decay_factor,
+            patience=3,
+            mode="min",
+            min_delta=1e-2,
+            cooldown=0,
+            min_learning_rate=self.args.g_start_lr * 0.001,
+            verbose=1,
+        )
 
     def batch_iterator(self, cnt, mode='train'):
         data_size = len(self.data.data_dirs['x' + mode])
@@ -244,8 +244,8 @@ class RCAN(DNN):
                 with open(self.data.save_weights_path + 'weights_best.json', 'w') as f1:
                     json.dump({"epoch": epoch}, f1, ensure_ascii=False, indent=2)
 
-                with open(self.data.save_weights_path + 'lr_controller.pkl', 'wb') as f1:
-                    pickle.dump(self.lr_controller, f1)
+                # with open(self.data.save_weights_path + 'lr_controller.pkl', 'wb') as f1:
+                #     pickle.dump(self.lr_controller, f1)
 
             validate_nrmse.append(np.mean(nrmses))
 
