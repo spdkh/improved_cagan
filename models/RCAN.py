@@ -23,8 +23,7 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --dnn_type RCAN --g_start_lr 0.001 --lr_decay_factor 0.95 --epoch 400 \
-    --sample_interval 10 --validate_interval 20
+    python -m train --dnn_type RCAN --g_start_lr 0.001 --lr_decay_factor 0.95 --epoch 400 --sample_interval 10 --validate_interval 20
 
 Experiment 01: Use 3.5 Implementation Details of the paper
     --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
@@ -37,7 +36,7 @@ Experiment 02: According to II.B The Architecture of Our Model
     3D structured illumination microscopy via channel attention generative adversarial network.
     IEEE Journal of Selected Topics in Quantum Electronics, 27(4), 1-11.
 
-    --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir experiment02 --data_dir D:\Data\FairSIM\cropped3d_128_3
+    --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir checkpoint/experiment02 --data_dir D:\Data\FairSIM\cropped3d_128_3
 
 tensorboard --logdir=
 
@@ -88,9 +87,9 @@ class RCAN(DNN):
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
-        if os.path.exists(self.data.save_weights_path + "weights_best.h5"):
-            self.model = tf.keras.models.load_model(self.data.save_weights_path +
-                                                    "weights_best.h5")
+        model_weights_path = os.path.join(self.data.save_weights_path, "weights_best")
+        if os.path.exists(model_weights_path):
+            self.model = tf.keras.models.load_model(model_weights_path)
 
             with open(self.data.save_weights_path + 'weights_best.json') as f1:
                 data = json.load(f1)
@@ -101,7 +100,7 @@ class RCAN(DNN):
 
             print(
                 "Loading weights successfully: "
-                + self.data.save_weights_path + "weights_best.h5"
+                + self.data.save_weights_path + "weights_best"
             )
         else:
             sys.setrecursionlimit(10 ** 4)
@@ -240,8 +239,7 @@ class RCAN(DNN):
             #                         'weights_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save(self.data.save_weights_path +
-                                'weights_best.h5')
+                self.model.save(os.path.join(self.data.save_weights_path, "weights_best"))
 
                 with open(self.data.save_weights_path + 'weights_best.json', 'w') as f1:
                     json.dump({"epoch": epoch}, f1, ensure_ascii=False, indent=2)
