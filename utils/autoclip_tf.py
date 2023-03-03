@@ -24,10 +24,17 @@
 
 This [repository](https://github.com/pseeth/autoclip) accompanies the [paper](https://arxiv.org/abs/2007.14469):
 
-> Prem Seetharaman, Gordon Wichern, Bryan Pardo, Jonathan Le Roux. "AutoClip: Adaptive Gradient Clipping for Source Separation Networks." 2020 IEEE 30th International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2020.
+> Prem Seetharaman, Gordon Wichern, Bryan Pardo, Jonathan Le Roux. "AutoClip: Adaptive Gradient Clipping for Source
+Separation Networks." 2020 IEEE 30th International Workshop on Machine Learning for Signal Processing (MLSP). IEEE,
+2020.
 
-## Abstract
-> Clipping the gradient is a known approach to improving gradient descent, but requires hand selection of a clipping threshold hyperparameter. We present AutoClip, a simple method for automatically and adaptively choosing a gradient clipping threshold, based on the history of gradient norms observed during training. Experimental results show that applying AutoClip results in improved generalization performance for audio source separation networks. Observation of the training dynamics of a separation network trained with and without AutoClip show that AutoClip guides optimization into smoother parts of the loss landscape. AutoClip is very simple to implement and can be integrated readily into a variety of applications across multiple domains.
+## Abstract > Clipping the gradient is a known approach to improving gradient descent, but requires hand selection of
+a clipping threshold hyperparameter. We present AutoClip, a simple method for automatically and adaptively choosing a
+gradient clipping threshold, based on the history of gradient norms observed during training. Experimental results
+show that applying AutoClip results in improved generalization performance for audio source separation networks.
+Observation of the training dynamics of a separation network trained with and without AutoClip show that AutoClip
+guides optimization into smoother parts of the loss landscape. AutoClip is very simple to implement and can be
+integrated readily into a variety of applications across multiple domains.
 
 ## Presentation
 
@@ -54,8 +61,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 
-class AutoClipper:
-    def __init__(self, clip_percentile, history_size=10000):
+class AutoClipper(tf.keras.optimizers.Adam):
+    def __init__(self, clip_percentile, history_size=10000, name="AutoClipperOptimizer", **kwargs):
+        super().__init__(name, **kwargs)
+
         self.clip_percentile = clip_percentile
         self.grad_history = tf.Variable(tf.zeros(history_size), trainable=False)
         self.i = tf.Variable(0, trainable=False)
@@ -80,9 +89,14 @@ class AutoClipper:
         # Calculate L2-norm, clip elements by ratio of clip_norm to L2-norm
         l2sum = tf.math.reduce_sum(values * values, axes, keepdims=True)
         pred = l2sum > 0
+
         # Two-tap tf.where trick to bypass NaN gradients
         l2sum_safe = tf.where(pred, l2sum, tf.ones_like(l2sum))
         return tf.squeeze(tf.where(pred, tf.math.sqrt(l2sum_safe), l2sum))
+
+    def get_config(self):
+        config = super().get_config()
+        return config
 
 
 if __name__ == "__main__":

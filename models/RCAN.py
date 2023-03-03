@@ -87,7 +87,7 @@ class RCAN(DNN):
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
-        model_weights_path = os.path.join(self.data.save_weights_path, "weights_best")
+        model_weights_path = self.data.save_weights_path + "_weights_best"
         if os.path.exists(model_weights_path):
             self.model = tf.keras.models.load_model(model_weights_path)
 
@@ -122,8 +122,8 @@ class RCAN(DNN):
             if self.args.g_opt == "adam":
                 opt = tf.keras.optimizers.Adam(
                     self.args.g_start_lr,
-                    # clipnorm=10.0,
-                    gradient_transformers=[AutoClipper(10)]
+                    clipnorm=10.0,
+                    # gradient_transformers=[AutoClipper(10)]
                 )
             else:
                 opt = self.args.g_opt
@@ -239,9 +239,9 @@ class RCAN(DNN):
             #                         'weights_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save(os.path.join(self.data.save_weights_path, "weights_best"))
+                self.model.save(self.data.save_weights_path + "_weights_best")
 
-                with open(self.data.save_weights_path + 'weights_best.json', 'w') as f1:
+                with open(self.data.save_weights_path + '_weights_best.json', 'w') as f1:
                     json.dump({"epoch": epoch}, f1, ensure_ascii=False, indent=2)
 
                 # with open(self.data.save_weights_path + 'lr_controller.pkl', 'wb') as f1:
