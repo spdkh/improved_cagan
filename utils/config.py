@@ -44,11 +44,11 @@ def parse_args():
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--dataset', type=str, default='FixedCell')
-    parser.add_argument('--dnn_type', type=str, default='RCAN',
+    parser.add_argument('--dataset', type=str, default='FairSIM')
+    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
                         choices=['CAGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
-    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
     parser.add_argument("--norm", type=str, default='max',
                         help='Normalization Method. Current options include: max, min_max, prctile')

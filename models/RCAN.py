@@ -45,7 +45,7 @@ from matplotlib import pyplot as plt
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
-from data.fair_sim import FairSIM
+from data.fairsim import FairSIM
 from data.fixed_cell import FixedCell
 from models.DNN import DNN
 from models.super_resolution import rcan
