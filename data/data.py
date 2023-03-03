@@ -58,6 +58,7 @@ class Data(ABC):
     #     psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
     #     psf = np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)
 
+
     def data_loader(self,
                     mode, it,
                     batch_size,
@@ -149,3 +150,5 @@ class Data(ABC):
                                         order='F').transpose((0, 2, 3, 1, 4))
 
         return image_batch, gt_batch, wf_batch
+
+

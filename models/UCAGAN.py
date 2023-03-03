@@ -18,10 +18,11 @@ class UCAGAN(CAGAN):
 
     def generator(self, g_input):
         x = rcan(g_input)
+        initial_x = x
 
         for iteration in range(self.args.unrolling_iter):
             x = rcan(x, scale=1)
-            x = tf.add(g_input, x)
+            x = tf.add(initial_x, x)
 
         self.g_output = x
 

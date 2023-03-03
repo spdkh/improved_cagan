@@ -6,12 +6,11 @@ from __future__ import division
 import os
 import re
 from abc import ABC, abstractmethod
-
 import tensorflow as tf
 from tensorflow.keras.models import Model
-
 from data.data import Data
-
+from data.fairsim import FairSIM
+from data.fixed_cell import FixedCell
 
 class DNN(ABC):
     """
@@ -32,8 +31,20 @@ class DNN(ABC):
 
         self.optimizer = self.args.g_opt
 
-        data_name = self.args.data_dir.split('/')[-1]
+        # data_name = self.args.data_dir.split('/')[-1]
 
+        print('Init', self.args.dnn_type)
+
+        if "FixedCell" in self.args.data_dir:
+            self.data = FixedCell(self.args)
+        elif "FairSIM" in self.args.data_dir:
+            self.data = FairSIM(self.args)
+        # datasets = {'FixedCell': FixedCell,
+        #             'FairSIM': FairSIM}
+
+        # self.data = datasets[self.args.dataset](self.args)
+        self.scale_factor = int(self.data.output_dim[0] / \
+                                self.data.input_dim[0])
         super().__init__()
 
     @abstractmethod
@@ -57,7 +68,7 @@ class DNN(ABC):
 
     @property
     def model_dir(self):
-        return "{}_{}_{}_{}".format(
+        return "{}_{}_{}".format(
             self.args.dnn_type, self.args.dataset_name,
             self.args.batch_size)
 

@@ -5,12 +5,12 @@ Most codes from https://github.com/carpedm20/DCGAN-tensorflow
 """
 from __future__ import division
 
-import scipy.misc
-import imageio
-
-import matplotlib.pyplot as plt
 import os
 
+import imageio
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.misc
 import tensorflow as tf
 # import tensorflow.contrib.slim as slim
 #
