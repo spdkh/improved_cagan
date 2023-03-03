@@ -91,7 +91,7 @@ class RCAN(DNN):
         if os.path.exists(model_weights_path):
             self.model = tf.keras.models.load_model(model_weights_path)
 
-            with open(self.data.save_weights_path + 'weights_best.json') as f1:
+            with open(self.data.save_weights_path + '_weights_best.json', 'w') as f1:
                 data = json.load(f1)
                 self.initial_epoch = data["epoch"]
 
