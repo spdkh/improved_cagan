@@ -38,6 +38,9 @@ Experiment 02: According to II.B The Architecture of Our Model
 
     --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir checkpoint/experiment02 --data_dir D:\Data\FairSIM\cropped3d_128_3
 
+Experiment 04:
+    --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir checkpoint/experiment04 --data_dir D:\Data\FixedCell\PFA_eGFP\cropped3d_128_3
+
 tensorboard --logdir=
 
 """
