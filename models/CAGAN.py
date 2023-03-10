@@ -12,6 +12,7 @@ from utils.fcns import check_folder
 
 import datetime
 import glob
+import sys
 
 from tensorflow.keras import backend as K
 
@@ -36,8 +37,6 @@ class CAGAN(GAN):
         GAN.__init__(self, args)
 
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        # optimizer_d = self.args.d_opt
-        # optimizer_g = self.args.g_opt
 
         self.disc_opt = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
@@ -122,11 +121,11 @@ class CAGAN(GAN):
             loss_discriminator, loss_generator = \
                 self.train_gan()
             elapsed_time = datetime.datetime.now() - start_time
-            print("%d epoch: time: %s, d_loss = %.5s, g_loss = %s" % (
+
+            tf.print("%d epoch: time: %s, g_loss = %s, d_loss= " % (
                 it + 1,
                 elapsed_time,
-                loss_discriminator,
-                loss_generator))
+                loss_generator), loss_discriminator, output_stream=sys.stdout)
 
             if (it + 1) % self.args.sample_interval == 0:
                 self.validate(it + 1, sample=1)

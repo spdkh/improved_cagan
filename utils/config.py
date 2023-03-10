@@ -48,20 +48,21 @@ def parse_args():
     parser.add_argument('--dnn_type', type=str, default='UCAGAN',
                         choices=['CAGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
-    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FairSIM\\cropped2d_128",
+    parser.add_argument("--data_dir", type=str,
+                        default="D:\\Data\\FairSIM\\cropped3d_128_3",
                         help='The directory of the data')
     parser.add_argument("--norm", type=str, default='max',
-                        help='Normalization Method. Current options include: max, min_max, prctile')
-    parser.add_argument('--epoch', type=int, default=2000, help='The number of epochs to run')
+                        help='Image normalization Method. Current options include: max, min_max, prctile')
+    parser.add_argument('--epoch', type=int, default=400, help='The number of epochs to run')
     parser.add_argument("--sample_interval", type=int, default=10)
     parser.add_argument("--validate_interval", type=int, default=20)
     parser.add_argument("--validate_num", type=int, default=20)
     parser.add_argument('--batch_size', type=int, default=2,
                         help='The size of batch')
 
-    parser.add_argument("--d_start_lr", type=float, default=1e-5)  # 2e-5
+    parser.add_argument("--d_start_lr", type=float, default=1e-3)  # 2e-5
     parser.add_argument("--g_start_lr", type=float, default=1e-3)  # 1e-4
-    parser.add_argument("--lr_decay_factor", type=float, default=0.5)
+    parser.add_argument("--lr_decay_factor", type=float, default=0.95)
     parser.add_argument("--load_weights", type=int, default=0)
     parser.add_argument("--g_opt", type=str, default="adam")
     parser.add_argument("--d_opt", type=str, default="adam")
