@@ -4,11 +4,11 @@
 """
 
 import sys
-
 import tensorflow as tf
 
 # ________________ architecture Variants
 from models.CAGAN import CAGAN
+from models.UCAGAN import UCAGAN
 from models.CGAN import CGAN
 from models.DNN import DNN
 from models.RCAN import RCAN
@@ -31,7 +31,9 @@ def main():
     model_fns = {'CAGAN': CAGAN,
                  'CGAN': CGAN,
                  'DNN': DNN,
+                 'UCAGAN': UCAGAN,
                  'RCAN': RCAN}
+
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
 

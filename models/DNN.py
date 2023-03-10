@@ -2,25 +2,15 @@
     author: SPDKH
     todo: complete
 """
-# -*- coding: utf-8 -*-
 from __future__ import division
-
-import glob
 import os
 import re
 from abc import ABC, abstractmethod
-
-import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
-
-import matplotlib.pyplot as plt
-
 from data.data import Data
-from utils.data_loader import data_loader
-
+from data.fairsim import FairSIM
+from data.fixed_cell import FixedCell
 
 class DNN(ABC):
     """
@@ -41,8 +31,20 @@ class DNN(ABC):
 
         self.optimizer = self.args.g_opt
 
-        data_name = self.args.data_dir.split('/')[-1]
+        # data_name = self.args.data_dir.split('/')[-1]
 
+        print('Init', self.args.dnn_type)
+
+        if "FixedCell" in self.args.data_dir:
+            self.data = FixedCell(self.args)
+        elif "FairSIM" in self.args.data_dir:
+            self.data = FairSIM(self.args)
+        # datasets = {'FixedCell': FixedCell,
+        #             'FairSIM': FairSIM}
+
+        # self.data = datasets[self.args.dataset](self.args)
+        self.scale_factor = int(self.data.output_dim[0] / \
+                                self.data.input_dim[0])
         super().__init__()
 
     @abstractmethod
@@ -101,7 +103,6 @@ class DNN(ABC):
 
     def load(self, checkpoint_dir):
         """
-        todo: add a function to generate the final checkpoint dir
         todo: test
         source: https://www.tensorflow.org/tutorials/keras/save_and_load
 
@@ -114,7 +115,9 @@ class DNN(ABC):
 
         """
         print(" [*] Reading checkpoints...")
-        checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir, self.model_name)
+        checkpoint_dir = os.path.join(checkpoint_dir,
+                                      self.model_dir,
+                                      self.model_name)
         latest = tf.train.latest_checkpoint(checkpoint_dir)
 
         if checkpoint_dir:

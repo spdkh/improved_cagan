@@ -7,13 +7,33 @@ from abc import abstractmethod
 import tensorflow as tf
 from models.DNN import DNN
 
+from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
+
 
 class GAN(DNN):
     """
         Abstract class for any GAN architecture
     """
+
     def __init__(self, args):
         DNN.__init__(self, args)
+
+        self.g_input = Input(self.data.input_dim)
+        self.d_input = Input(self.data.output_dim)
+        self.batch_id = {'train': 0, 'val': 0, 'test': 0}
+
+        self.g_output = None
+        self.d_output = None
+
+        self.writer = None
+        self.disc = None
+        self.frozen_d = None
+        self.gen = None
+        self.lr_controller_g = None
+        self.lr_controller_d = None
+        self.dloss_record = []
+        self.gloss_record = []
+
 
     def discriminator(self):
         pass

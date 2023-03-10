@@ -2,7 +2,6 @@
     author: Parisa Daj
     date: May 10, 2022
     parsing and configuration
-    todo: revise
 """
 import argparse
 import random
@@ -17,11 +16,11 @@ def check_args(args):
     # --checkpoint_dir
     check_folder(args.checkpoint_dir)
 
-    # --result_dir
-    check_folder(args.result_dir)
-
-    # --result_dir
-    check_folder(args.log_dir)
+    # # --result_dir
+    # check_folder(args.result_dir)
+    #
+    # # --result_dir
+    # check_folder(args.log_dir)
 
     # --epoch
     assert args.epoch >= 1, 'number of epochs must be larger than or equal to one'
@@ -45,30 +44,30 @@ def parse_args():
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--dnn_type', type=str, default='CAGAN',
-                        choices=['caGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
+    parser.add_argument('--dataset', type=str, default='FairSIM')
+    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
+                        choices=['CAGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
-    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+    parser.add_argument("--data_dir", type=str, default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
-    # parser.add_argument('--patch_dim', nargs='+', default=[128, 128, 1, 15],
-    #                     help='Dimension of the patches followed by number of channels')
-    parser.add_argument("--scale_factor", type=int, default=2)
-    parser.add_argument("--norm_flag", type=int, default=1)
-    parser.add_argument('--epoch', type=int, default=5000, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=100)
-    parser.add_argument("--validate_interval", type=int, default=200)
-    parser.add_argument("--validate_num", type=int, default=200)
-    parser.add_argument('--batch_size', type=int, default=4,
+    parser.add_argument("--norm", type=str, default='max',
+                        help='Normalization Method. Current options include: max, min_max, prctile')
+    parser.add_argument('--epoch', type=int, default=2000, help='The number of epochs to run')
+    parser.add_argument("--sample_interval", type=int, default=10)
+    parser.add_argument("--validate_interval", type=int, default=20)
+    parser.add_argument("--validate_num", type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=2,
                         help='The size of batch')
 
-    parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
-    parser.add_argument("--g_start_lr", type=float, default=1e-4)  # 1e-4
+    parser.add_argument("--d_start_lr", type=float, default=1e-5)  # 2e-5
+    parser.add_argument("--g_start_lr", type=float, default=1e-3)  # 1e-4
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
     parser.add_argument("--load_weights", type=int, default=0)
     parser.add_argument("--g_opt", type=str, default="adam")
     parser.add_argument("--d_opt", type=str, default="adam")
     parser.add_argument("--train_discriminator_times", type=int, default=1)
-    parser.add_argument("--train_generator_times", type=int, default=10)
+    parser.add_argument("--train_generator_times", type=int, default=3)
+    parser.add_argument("--unrolling_iter", type=int, default=3)
 
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
                         help='Directory name to save the checkpoints')

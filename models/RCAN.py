@@ -57,7 +57,7 @@ from matplotlib import pyplot as plt
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
-from data.fair_sim import FairSIM
+from data.fairsim import FairSIM
 from data.fixed_cell import FixedCell
 from models.DNN import DNN
 from models.super_resolution import rcan
@@ -69,7 +69,6 @@ from utils.lr_controller import ReduceLROnPlateau
 class RCAN(DNN):
     def __init__(self, args):
         DNN.__init__(self, args)
-        print('Init RCAN!')
 
         if "FixedCell" in self.args.data_dir:
             self.data = FixedCell(self.args)
@@ -170,12 +169,11 @@ class RCAN(DNN):
                     # print(b_id, "is zero.")
                     break
 
-                input_g, gt_g = self.data.data_loader(
+                input_g, gt_g, wf_d = self.data.data_loader(
                     'train',
                     self.batch_iterator(batch_id),
                     self.args.batch_size,
-                    self.args.norm_flag,
-                    self.args.scale_factor
+                    self.scale_factor
                 )
 
                 loss = self.model.train_on_batch(input_g, gt_g)
@@ -212,11 +210,10 @@ class RCAN(DNN):
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
 
         # for path in validate_path:
-        imgs, imgs_gt = self.data.data_loader('val',
+        imgs, imgs_gt, imgs_wf = self.data.data_loader('val',
                                               self.batch_iterator(epoch - 1, 'val'),
                                               self.args.batch_size,
-                                              self.args.norm_flag,
-                                              self.args.scale_factor)
+                                              self.scale_factor)
 
         outputs = self.model.predict(imgs)
         for output, img_gt in zip(outputs, imgs_gt):
