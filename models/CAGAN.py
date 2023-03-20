@@ -4,15 +4,16 @@
 
 from utils.lr_controller import ReduceLROnPlateau
 
-
 from models.GAN import GAN
 from models.binary_classification import discriminator
 from models.super_resolution import rcan
 from utils.fcns import check_folder
+from utils.autoclip_tf import AutoClipper
 
 import datetime
 import glob
 import sys
+import os
 
 from tensorflow.keras import backend as K
 
@@ -38,7 +39,8 @@ class CAGAN(GAN):
 
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
-        self.disc_opt = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.disc_opt = tf.keras.optimizers.Adam(args.d_start_lr,
+                                                 beta_1=args.lr_decay_factor)
 
     def build_model(self):
         """
@@ -59,33 +61,42 @@ class CAGAN(GAN):
         # last fake hp
         gen_loss = self.generator_loss(judge)
         # temp
-        psf = np.random.rand(128, 128, 11)
-        loss_wf = create_psf_loss(psf)
+        # psf = np.random.rand(128, 128, 11)
+
+        loss_wf = create_psf_loss(self.data.psf)
         # gen_total_loss, gen_gan_loss, gen_l1_loss =\
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
+        if self.args.g_opt == "adam":
+            g_opt = tf.keras.optimizers.Adam(
+                self.args.g_start_lr,
+                gradient_transformers=[AutoClipper(20)]
+            )
+        else:
+            g_opt = self.args.g_opt
+
         self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
-                         optimizer=self.args.g_opt,
+                         optimizer=g_opt,
                          loss_weights=[1, 0.1, self.args.weight_wf_loss])
 
-        self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
-                                                 factor=self.args.lr_decay_factor,
-                                                 patience=10,
-                                                 mode='min',
-                                                 min_delta=1e-3,
-                                                 cooldown=0,
-                                                 min_learning_rate=self.args.g_start_lr * 0.1,
-                                                 verbose=1)
-
-        self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
-                                                 factor=self.args.lr_decay_factor,
-                                                 patience=10,
-                                                 mode='min',
-                                                 min_delta=1e-3,
-                                                 cooldown=0,
-                                                 min_learning_rate=self.args.d_start_lr * 0.1,
-                                                 verbose=1)
+        # self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
+        #                                          factor=self.args.lr_decay_factor,
+        #                                          patience=10,
+        #                                          mode='min',
+        #                                          min_delta=1e-3,
+        #                                          cooldown=0,
+        #                                          min_learning_rate=self.args.g_start_lr * 0.1,
+        #                                          verbose=1)
+        #
+        # self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
+        #                                          factor=self.args.lr_decay_factor,
+        #                                          patience=10,
+        #                                          mode='min',
+        #                                          min_delta=1e-3,
+        #                                          cooldown=0,
+        #                                          min_learning_rate=self.args.d_start_lr * 0.1,
+        #                                          verbose=1)
 
         self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         # checkpoint_dir = './training_checkpoints'
@@ -148,7 +159,6 @@ class CAGAN(GAN):
         todo: disc part is absolutely wrong: use pix2pix code instead
             https://www.tensorflow.org/tutorials/generative/pix2pix
         """
-        batch_id = self.batch_iterator(0)
 
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
@@ -164,7 +174,7 @@ class CAGAN(GAN):
             #       I think they should not : update: this is wrong: they should
             input_d, gt_d, wf_d = \
                 self.data.data_loader('train',
-                                      self.batch_iterator(batch_id),
+                                      self.batch_iterator(),
                                       batch_size_d,
                                       self.scale_factor,
                                       self.args.weight_wf_loss)
@@ -201,13 +211,13 @@ class CAGAN(GAN):
         #         train generator
         # ------------------------------------
         for i in range(self.args.train_generator_times):
-            # input_g, gt_g, wf_d = \
-            #     self.data.data_loader('train',
-            #                           self.batch_iterator(batch_id),
-            #                           self.args.batch_size,
-            #                           self.scale_factor,
-            #                           self.args.weight_wf_loss)
-            loss_generator = self.gen.train_on_batch(input_d, gt_d)
+            input_g, gt_g, wf_g = \
+                self.data.data_loader('train',
+                                      self.batch_iterator(),
+                                      self.args.batch_size,
+                                      self.scale_factor,
+                                      self.args.weight_wf_loss)
+            loss_generator = self.gen.train_on_batch(input_g, gt_g)
             self.gloss_record.append(loss_generator)
         return disc_loss, loss_generator
 
@@ -227,8 +237,6 @@ class CAGAN(GAN):
 
         # initialization
 
-        self.lr_controller_g.on_train_begin()
-        self.lr_controller_d.on_train_begin()
         validate_nrmse = [np.Inf]
 
         # -------------------------------------------------------------------
@@ -244,7 +252,6 @@ class CAGAN(GAN):
         patch_y, patch_x, patch_z, _ = self.data.input_dim
         validate_path = glob.glob(self.data.data_dirs['val'] + '*')
         validate_path.sort()
-        # print('_______________', validate_path)
         # if sample == 1:
         #     validate_path = np.random.choice(validate_path, size=1)
         # elif self.args.validate_num < validate_path.__len__():
@@ -260,11 +267,12 @@ class CAGAN(GAN):
         # check_folder(sample_path)
 
         mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
-        imgs, imgs_gt, output = [], [], []
+        # imgs, imgs_gt, output = [], [], []
         # for path in validate_path:
+
         imgs, imgs_gt, wf_batch = \
             self.data.data_loader('val',
-                                  self.batch_iterator(epoch - 1, 'val'),
+                                  self.batch_iterator('val'),
                                   self.args.batch_size,
                                   self.scale_factor)
 
@@ -272,7 +280,6 @@ class CAGAN(GAN):
         for output, img_gt in zip(outputs, imgs_gt):
             # predict generates [1, x, y, z, 1]
             # It is converted to [x, y, z] below
-            # print(np.shape(imgs))
             output = np.reshape(output,
                                 self.data.output_dim[:-1])
 
@@ -304,28 +311,24 @@ class CAGAN(GAN):
                                        'weights_disc_best.h5')
 
             validate_nrmse.append(np.mean(nrmses))
-            curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
+            # curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
             # curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
             self.write_log(self.writer, val_names[0], np.mean(mses), epoch)
             self.write_log(self.writer, val_names[1], np.mean(ssims), epoch)
             self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
             self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
             self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
-            self.write_log(self.writer, 'lr_g', curlr_g, epoch)
+            # self.write_log(self.writer, 'lr_g', curlr_g, epoch)
             # self.write_log(self.writer, 'lr_d', curlr_d, epoch)
 
         else:
-
-            # imgs = np.mean(imgs[0], 4)
             plt.figure(figsize=(22, 6))
-
+            validation_id = 0
             # figures equal to the number of z patches in columns
             for j in range(patch_z):
-                validation_id = 1
-                output_results = {'Raw Input': imgs[0, :, :, j, 0],
-                                  'Super Resolution Output': np.array(outputs[validation_id, :, :, j, 0]) / np.max(
-                                      outputs[validation_id, :, :, j, 0]),
-                                  'Ground Truth': imgs_gt[0, :, :, j, 0]}
+                output_results = {'Raw Input': imgs[validation_id, :, :, j, 0],
+                                  'Super Resolution Output': self.data.norm(outputs[validation_id, :, :, j, 0]),
+                                  'Ground Truth': imgs_gt[validation_id, :, :, j, 0]}
 
                 plt.title('Z = ' + str(j))
                 for i, (label, img) in enumerate(output_results.items()):
@@ -344,20 +347,6 @@ class CAGAN(GAN):
 
             plt.savefig(self.data.sample_path + '%d.png' % epoch)  # Save sample results
             plt.close("all")  # Close figures to avoid memory leak
-
-    def prctile_norm(self, x_in, min_prc=0, max_prc=100):
-        """
-
-        :param x_in:
-        :param min_prc:
-        :param max_prc:
-        :return: output
-        """
-        output = (x_in - np.percentile(x_in, min_prc)) / (np.percentile(x_in, max_prc)
-                                                          - np.percentile(x_in, min_prc) + 1e-7)
-        output[output > 1] = 1
-        output[output < 0] = 0
-        return output
 
     def img_comp(self,
                  gt, pr,
@@ -395,16 +384,16 @@ class CAGAN(GAN):
             num = np.size(gt, 0)
 
         for i in range(num):
-            mses.append(compare_mse(self.prctile_norm(np.squeeze(gt[i])),
-                                    self.prctile_norm(np.squeeze(pr[i]))))
-            nrmses.append(compare_nrmse(self.prctile_norm(np.squeeze(gt[i])),
-                                        self.prctile_norm(np.squeeze(pr[i]))))
-            psnrs.append(compare_psnr(self.prctile_norm(np.squeeze(gt[i])),
-                                      self.prctile_norm(np.squeeze(pr[i]))))
-            ssims.append(compare_ssim(self.prctile_norm(np.squeeze(gt[i])),
-                                      self.prctile_norm(np.squeeze(pr[i]))))
-            uqis.append(uqi(self.prctile_norm(np.squeeze(pr[i])),
-                            self.prctile_norm(np.squeeze(gt[i]))))
+            mses.append(compare_mse(self.data.norm(np.squeeze(gt[i])),
+                                    self.data.norm(np.squeeze(pr[i]))))
+            nrmses.append(compare_nrmse(self.data.norm(np.squeeze(gt[i])),
+                                        self.data.norm(np.squeeze(pr[i]))))
+            psnrs.append(compare_psnr(self.data.norm(np.squeeze(gt[i])),
+                                      self.data.norm(np.squeeze(pr[i]))))
+            ssims.append(compare_ssim(self.data.norm(np.squeeze(gt[i])),
+                                      self.data.norm(np.squeeze(pr[i]))))
+            uqis.append(uqi(self.data.norm(np.squeeze(pr[i])),
+                            self.data.norm(np.squeeze(gt[i]))))
         return mses, nrmses, psnrs, ssims, uqis
 
     def discriminator(self):
@@ -437,14 +426,6 @@ class CAGAN(GAN):
 
         return gen_loss
 
-    def batch_iterator(self, cnt, mode='train'):
-        data_size = len(self.data.data_dirs['x' + mode])
-        if data_size // self.args.batch_size > cnt:
-            self.batch_id[mode] = 1 + cnt
-            return self.batch_id[mode]
-        self.batch_id[mode] = 0
-        return self.batch_id[mode]
-
 
 def loss_mse_ssim_3d(y_true, y_pred):
     ssim_para = 1e-1  # 1e-2
@@ -466,6 +447,7 @@ def loss_mse_ssim_3d(y_true, y_pred):
 def create_psf_loss(psf):
     def loss_wf(y_true, y_pred):
         # Wide field loss
+
         x_wf = K.conv3d(y_pred, psf, padding='same')
         x_wf = K.pool3d(x_wf, pool_size=(2, 2, 1), strides=(2, 2, 1), pool_mode="avg")
         x_min = K.min(x_wf)

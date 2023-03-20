@@ -47,6 +47,15 @@ class DNN(ABC):
                                 self.data.input_dim[0])
         super().__init__()
 
+    def batch_iterator(self, mode='train'):
+        # how many total data in that mode exists
+        data_size = len(os.listdir(self.data.data_dirs['x' + mode]))
+        if data_size // self.args.batch_size - self.args.batch_size <= self.batch_id[mode]:
+            self.batch_id[mode] = 0
+
+        self.batch_id[mode] += 1
+        return self.batch_id[mode]
+
     @abstractmethod
     def build_model(self):
         pass
