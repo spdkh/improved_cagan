@@ -3,9 +3,13 @@
 """
 import os
 import datetime
+
+import numpy as np
+
 from data.data import Data
 from utils import fcns
 from utils.fcns import check_folder
+from utils.psf_generator import Parameters3D, cal_psf_3d, psf_estimator_3d
 
 
 class FairSIM(Data):
@@ -57,5 +61,25 @@ class FairSIM(Data):
                 self.data_dirs[data_type + data_group] = \
                     os.path.join(self.data_dirs[data_group],
                                  self.data_types[data_type])
-        print(self.data_dirs)
 
+        print(self.data_dirs)
+        self.psf = self.init_psf()
+
+    def init_psf(self):
+        # --------------------------------------------------------------------------------
+        #                             Read OTF and PSF
+        # --------------------------------------------------------------------------------
+        pParam = Parameters3D()
+        # 128*128*11 otf and psf numpy array
+        # 525 loads FairSIM PSF
+        OTF_Path = {525: './OTF/splinePSF_128_128_11.mat'}
+        psf, _ = cal_psf_3d(OTF_Path[self.args.wave_len],
+                            pParam.Ny, pParam.Nx, pParam.Nz,
+                            pParam.dky, pParam.dkx, pParam.dkz)
+
+        sigma_y, sigma_x, sigma_z = psf_estimator_3d(psf)  # Find the most effective region of OTF
+        ksize = int(sigma_y * 4)
+        halfy = pParam.Ny // 2
+        psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
+        return np.reshape(psf,
+                          (2 * ksize, 2 * ksize, pParam.Nz, 1)).astype(np.float32)

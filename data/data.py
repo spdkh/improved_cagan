@@ -37,28 +37,6 @@ class Data(ABC):
 
         return img_size
 
-    # def load_psf(self):
-    # --------------------------------------------------------------------------------
-    #                             Read OTF and PSF
-    # --------------------------------------------------------------------------------
-    #     pParam = parameters3D()
-    #     # 128*128*11 otf and psf numpy array
-    #     # 525 loads FairSIM PSF
-    #     OTF_Path = {488: './OTF/3D-488-OTF-smallendian.mrc', 560: './OTF/3D-560-OTF-smallendian.mrc',
-    #                 525: './OTF/splinePSF_128_128_11.mat'}
-    #     psf, _ = cal_psf_3d(OTF_Path[wave_len],
-    #                         pParam.Ny, pParam.Nx, pParam.Nz,
-    #                         pParam.dky, pParam.dkx, pParam.dkz)
-    #
-    #     # print(np.shape(psf))
-    #
-    #     sigma_y, sigma_x, sigma_z = psf_estimator_3d(psf)  # Find the most effective region of OTF
-    #     ksize = int(sigma_y * 4)
-    #     halfy = pParam.Ny // 2
-    #     psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
-    #     psf = np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)np.reshape(psf, (2 * ksize, 2 * ksize, pParam.Nz, 1, 1)).astype(np.float32)
-
-
     def data_loader(self,
                     mode, it,
                     batch_size,
@@ -82,14 +60,13 @@ class Data(ABC):
 
         images_names = os.listdir(self.data_dirs['x' + mode])
         gt_names = os.listdir(self.data_dirs['y' + mode])
-        # print(gt_names)
+
         images_names.sort()
         gt_names.sort()
-
         x_path = self.data_dirs['x' + mode]
         y_path = self.data_dirs['y' + mode]
-        # train_wf_path = self.args.data_dir + '/training_wf/'
-        # print(images_names)
+
+        it = it * batch_size
         batch_images_path = images_names[it:batch_size + it]
         gt_images_path = gt_names[it:batch_size + it]
 
@@ -107,12 +84,12 @@ class Data(ABC):
 
             cur_img = self.norm(np.array(cur_img))
             cur_gt = self.norm(np.array(cur_gt))
-
             image_batch.append(cur_img)
             gt_batch.append(cur_gt)
 
         image_batch = np.array(image_batch)
         gt_batch = np.array(gt_batch)
+
         nslice = image_batch.shape[1]
         image_batch = np.reshape(image_batch,
                                  (batch_size,
@@ -121,6 +98,7 @@ class Data(ABC):
                                   self.input_dim[1],
                                   self.input_dim[0]),
                                  order='F').transpose((0, 3, 4, 2, 1))
+
         gt_batch = gt_batch.reshape((batch_size,
                                      self.input_dim[2],
                                      self.input_dim[1] * scale,
@@ -130,15 +108,14 @@ class Data(ABC):
 
         if wf_weight > 0:
             for cur_img in image_batch:
-                cur_wf = reorder(cur_img)
-                cur_wf = block_reduce(cur_wf,
-                                      block_size=(self.input_dim[3], 1, 1),
+                nchannels = cur_img.shape[-1]
+
+                # WideField is the sum of angles and phases in each z patch
+                cur_wf = block_reduce(cur_img,
+                                      block_size=(1, 1, 1, nchannels),
                                       func=np.sum,
-                                      cval=np.sum(cur_wf))
-
-                # wf_shape = np.shape(cur_wf)
-
-                gt_batch.append(cur_gt)
+                                      cval=np.sum(cur_img))
+                cur_wf = self.norm(np.array(cur_wf))
                 wf_batch.append(cur_wf)
 
             wf_batch = np.array(wf_batch)

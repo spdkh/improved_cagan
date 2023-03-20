@@ -102,8 +102,13 @@ class RCAN(DNN):
 
             print(
                 "Loading weights successfully: "
-                + self.data.save_weights_path + "weights_best"
-            )
+                + self.data.save_weights_path + "weights_best")
+            
+            if self.args.g_opt == "adam":
+                opt = tf.keras.optimizers.Adam(
+                    self.args.g_start_lr,
+                    gradient_transformers=[AutoClipper(20)]
+                )
         else:
             sys.setrecursionlimit(10 ** 4)
             output = rcan(
@@ -144,14 +149,19 @@ class RCAN(DNN):
             verbose=1,
         )
 
-    def batch_iterator(self, cnt, mode='train'):
-        data_size = len(self.data.data_dirs['x' + mode])
-        if data_size // self.args.batch_size > cnt:
-            self.batch_id[mode] = 1 + cnt
-            return self.batch_id[mode]
-
-        self.batch_id[mode] = 0
-        return self.batch_id[mode]
+        if os.path.exists(self.data.save_weights_path + "weights_best.h5"):
+            self.model.load_weights(self.data.save_weights_path + "weights_best.h5")
+            print(
+                "Loading weights successfully: "
+                + self.data.save_weights_path + "weights_best.h5"
+            )
+        elif os.path.exists(self.data.save_weights_path + "weights_latest.h5"):
+            self.model.load_weights(self.data.save_weights_path + "weights_latest.h5")
+            print(
+                "Loading weights successfully: "
+                + self.data.save_weights_path
+                + "weights_latest.h5"
+            )
 
     def train(self):
         start_time = datetime.datetime.now()
@@ -164,14 +174,14 @@ class RCAN(DNN):
             # batch_id flag for iteration number including the inner loops
             temp_loss = []
             for b_id in range(8):
-                batch_id = self.batch_iterator(b_id)
+                batch_id = self.batch_iterator()
                 if batch_id == 0:
                     # print(b_id, "is zero.")
                     break
 
                 input_g, gt_g, wf_d = self.data.data_loader(
                     'train',
-                    self.batch_iterator(batch_id),
+                    self.batch_iterator(),
                     self.args.batch_size,
                     self.scale_factor
                 )
@@ -211,9 +221,9 @@ class RCAN(DNN):
 
         # for path in validate_path:
         imgs, imgs_gt, imgs_wf = self.data.data_loader('val',
-                                              self.batch_iterator(epoch - 1, 'val'),
-                                              self.args.batch_size,
-                                              self.scale_factor)
+                                                       self.batch_iterator('val'),
+                                                       self.args.batch_size,
+                                                       self.scale_factor)
 
         outputs = self.model.predict(imgs)
         for output, img_gt in zip(outputs, imgs_gt):
