@@ -40,7 +40,7 @@ class CAGAN(GAN):
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
         self.disc_opt = tf.keras.optimizers.Adam(args.d_start_lr,
-                                                 beta_1=args.lr_decay_factor)
+                                                 beta_1=args.d_lr_decay_factor)
 
     def build_model(self):
         """
@@ -68,16 +68,16 @@ class CAGAN(GAN):
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
-        if self.args.g_opt == "adam":
-            g_opt = tf.keras.optimizers.Adam(
-                self.args.g_start_lr,
+        if self.args.opt == "adam":
+            opt = tf.keras.optimizers.Adam(
+                self.args.start_lr,
                 gradient_transformers=[AutoClipper(20)]
             )
         else:
-            g_opt = self.args.g_opt
+            opt = self.args.opt
 
         self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
-                         optimizer=g_opt,
+                         optimizer=opt,
                          loss_weights=[1, 0.1, self.args.weight_wf_loss])
 
         # self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
@@ -86,7 +86,7 @@ class CAGAN(GAN):
         #                                          mode='min',
         #                                          min_delta=1e-3,
         #                                          cooldown=0,
-        #                                          min_learning_rate=self.args.g_start_lr * 0.1,
+        #                                          min_learning_rate=self.args.start_lr * 0.1,
         #                                          verbose=1)
         #
         # self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
@@ -101,7 +101,7 @@ class CAGAN(GAN):
         self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         # checkpoint_dir = './training_checkpoints'
         # checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.g_opt,
+        # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.opt,
         #                                  discriminator_optimizer=self.args.d_opt,
         #                                  generator=self.gen,
         #                                  discriminator=self.disc)

@@ -86,17 +86,17 @@ class RCAN(DNN):
         # print(output)
         self.model = Model(inputs=self.input, outputs=output)
 
-        for layer in self.model.layers:
-            print(layer.output_shape)
-        print(self.output)
+        # for layer in self.model.layers:
+        #     print(layer.output_shape)
+        # print(self.output)
 
-        if self.args.g_opt == "adam":
+        if self.args.opt == "adam":
             opt = tf.keras.optimizers.Adam(
-                self.args.g_start_lr,
+                self.args.start_lr,
                 gradient_transformers=[AutoClipper(20)]
             )
         else:
-            opt = self.args.g_opt
+            opt = self.args.opt
 
         self.model.compile(loss=self.loss_object,
                            optimizer=opt)
@@ -108,7 +108,7 @@ class RCAN(DNN):
             mode="min",
             min_delta=1e-2,
             cooldown=0,
-            min_learning_rate=self.args.g_start_lr * 0.01,
+            min_learning_rate=self.args.start_lr * 0.001,
             verbose=1,
         )
 

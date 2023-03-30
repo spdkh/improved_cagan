@@ -29,7 +29,7 @@ class DNN(ABC):
 
         self.data = Data(self.args)
 
-        self.optimizer = self.args.g_opt
+        self.optimizer = self.args.opt
 
         # data_name = self.args.data_dir.split('/')[-1]
 
