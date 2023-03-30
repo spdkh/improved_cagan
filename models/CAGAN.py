@@ -161,8 +161,8 @@ class CAGAN(GAN):
         todo: disc part is absolutely wrong: use pix2pix code instead
             https://www.tensorflow.org/tutorials/generative/pix2pix
         """
-        disc_loss = 0
-        loss_generator = 0
+        # disc_loss = 0
+        # loss_generator = 0
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
