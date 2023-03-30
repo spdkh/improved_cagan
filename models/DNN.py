@@ -50,10 +50,10 @@ class DNN(ABC):
     def batch_iterator(self, mode='train'):
         # how many total data in that mode exists
         data_size = len(os.listdir(self.data.data_dirs['x' + mode]))
-        if data_size // self.args.batch_size - self.args.batch_size <= self.batch_id[mode]:
+        if data_size // self.args.batch_size - 1 <= self.batch_id[mode]:
             self.batch_id[mode] = 0
-
-        self.batch_id[mode] += 1
+        else:
+            self.batch_id[mode] += 1
         return self.batch_id[mode]
 
     @abstractmethod

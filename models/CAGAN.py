@@ -76,9 +76,11 @@ class CAGAN(GAN):
         else:
             opt = self.args.opt
 
-        self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
+        self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=opt,
-                         loss_weights=[1, 0.1, self.args.weight_wf_loss])
+                         loss_weights=[1,
+                                       self.args.gan_loss,
+                                       self.args.weight_wf_loss])
 
         # self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
         #                                          factor=self.args.lr_decay_factor,
@@ -159,7 +161,8 @@ class CAGAN(GAN):
         todo: disc part is absolutely wrong: use pix2pix code instead
             https://www.tensorflow.org/tutorials/generative/pix2pix
         """
-
+        disc_loss = 0
+        loss_generator = 0
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
@@ -426,22 +429,23 @@ class CAGAN(GAN):
 
         return gen_loss
 
+    def loss_mse_ssim_3d(self, y_true, y_pred):
+        ssim_para = self.args.ssim_loss
+        mse_para = self.args.mse_loss
+        mae_para = self.args.mae_loss
 
-def loss_mse_ssim_3d(y_true, y_pred):
-    ssim_para = 1e-1  # 1e-2
-    mse_para = 1
+        # SSIM loss and MSE loss
+        x = K.permute_dimensions(y_true, (0, 4, 1, 2, 3))
+        y = K.permute_dimensions(y_pred, (0, 4, 1, 2, 3))
+        x = (x - K.min(x)) / (K.max(x) - K.min(x))
+        y = (y - K.min(y)) / (K.max(y) - K.min(y))
 
-    # SSIM loss and MSE loss
-    x = K.permute_dimensions(y_true, (0, 4, 1, 2, 3))
-    y = K.permute_dimensions(y_pred, (0, 4, 1, 2, 3))
-    x = (x - K.min(x)) / (K.max(x) - K.min(x))
-    y = (y - K.min(y)) / (K.max(y) - K.min(y))
+        ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1))/2)
+        mse_loss = mse_para * K.mean(K.square(y - x))
+        mae_loss = mae_para * K.mean(K.abs(y - x))
 
-    ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1)))
-    mse_loss = mse_para * K.mean(K.square(y - x))
-
-    output = mse_loss + ssim_loss
-    return output
+        output = mae_loss + mse_loss + ssim_loss
+        return output
 
 
 def create_psf_loss(psf):
