@@ -39,17 +39,22 @@ class FairSIM(Data):
 
         data_name = 'FairSIM'
 
+        chkpnt_folder_name = '_'.join([data_name,
+                              self.args.dnn_type,
+                              datetime.datetime.now().strftime("%d-%m-%Y_time%H%M")])
+
         self.save_weights_path = os.path.join(self.args.checkpoint_dir,
-                                              data_name,
-                                              self.args.dnn_type,
-                                              datetime.datetime.now().strftime("%d-%m-%Y_time%H%M")[:-1] + '0')
+                                              chkpnt_folder_name)
 
         print(self.save_weights_path)
         check_folder(self.save_weights_path)
 
-        self.sample_path = os.path.join(self.save_weights_path, 'sampled_img')
+        self.sample_path = os.path.join(self.save_weights_path,
+                                        'sampled_img')
 
-        self.log_path = os.path.join(self.save_weights_path, 'graph')
+        self.log_path = os.path.join(self.args.checkpoint_dir,
+                                     'graph',
+                                     chkpnt_folder_name)
         self.data_dirs = dict()
 
         #     check_folder(self.log_path)

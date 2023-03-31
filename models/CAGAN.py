@@ -37,6 +37,9 @@ class CAGAN(GAN):
     def __init__(self, args):
         GAN.__init__(self, args)
 
+        self.d_loss_object = None
+        self.lr_controller = None
+        self.d_lr_controller = None
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
         self.disc_opt = tf.keras.optimizers.Adam(args.d_start_lr,
@@ -76,29 +79,33 @@ class CAGAN(GAN):
         else:
             opt = self.args.opt
 
+        self.lr_controller = ReduceLROnPlateau(
+            model=self.gen,
+            factor=self.args.lr_decay_factor,
+            patience=3,
+            mode="min",
+            min_delta=1e-2,
+            cooldown=0,
+            min_learning_rate=self.args.start_lr * 0.001,
+            verbose=1,
+        )
+
         self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=opt,
                          loss_weights=[1,
                                        self.args.gan_loss,
                                        self.args.weight_wf_loss])
 
-        # self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
-        #                                          factor=self.args.lr_decay_factor,
-        #                                          patience=10,
-        #                                          mode='min',
-        #                                          min_delta=1e-3,
-        #                                          cooldown=0,
-        #                                          min_learning_rate=self.args.start_lr * 0.1,
-        #                                          verbose=1)
-        #
-        # self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
-        #                                          factor=self.args.lr_decay_factor,
-        #                                          patience=10,
-        #                                          mode='min',
-        #                                          min_delta=1e-3,
-        #                                          cooldown=0,
-        #                                          min_learning_rate=self.args.d_start_lr * 0.1,
-        #                                          verbose=1)
+        self.lr_controller_d = ReduceLROnPlateau(
+            model=self.disc,
+            factor=self.args.d_lr_decay_factor,
+            patience=3,
+            mode="min",
+            min_delta=1e-2,
+            cooldown=0,
+            min_learning_rate=self.args.d_start_lr * 0.001,
+            verbose=1,
+        )
 
         self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         # checkpoint_dir = './training_checkpoints'
@@ -126,6 +133,7 @@ class CAGAN(GAN):
         """
 
         start_time = datetime.datetime.now()
+        self.lr_controller.on_train_begin()
         train_names = ['Generator_loss', 'Discriminator_loss']
 
         print('Training...')
@@ -161,8 +169,8 @@ class CAGAN(GAN):
         todo: disc part is absolutely wrong: use pix2pix code instead
             https://www.tensorflow.org/tutorials/generative/pix2pix
         """
-        # disc_loss = 0
-        # loss_generator = 0
+        disc_loss = 0
+        loss_generator = 0
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
@@ -245,7 +253,7 @@ class CAGAN(GAN):
         # -------------------------------------------------------------------
         #                       about Tensor Board
         # -------------------------------------------------------------------
-        self.writer = tf.summary.create_file_writer(self.data.log_path)
+
         val_names = ['val_MSE',
                      'val_SSIM',
                      'val_PSNR',
@@ -302,27 +310,28 @@ class CAGAN(GAN):
 
         if sample == 0:
             # if best, save weights.best
-            self.gen.save_weights(self.data.save_weights_path +
-                                  'weights_gen_latest.h5')
-            self.disc.save_weights(self.data.save_weights_path +
-                                   'weights_disc_latest.h5')
+            self.gen.save_weights(os.path.join(self.data.save_weights_path,
+                                  'weights_gen_latest.h5'))
+            self.disc.save_weights(os.path.join(self.data.save_weights_path,
+                                   'weights_disc_latest.h5'))
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.gen.save_weights(self.data.save_weights_path +
-                                      'weights_gen_best.h5')
-                self.disc.save_weights(self.data.save_weights_path +
-                                       'weights_disc_best.h5')
+                self.gen.save_weights(os.path.join(self.data.save_weights_path,
+                                      'weights_gen_best.h5'))
+                self.disc.save_weights(os.path.join(self.data.save_weights_path,
+                                       'weights_disc_best.h5'))
 
             validate_nrmse.append(np.mean(nrmses))
-            # curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
-            # curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
+            cur_lr = self.lr_controller.on_epoch_end(epoch, np.mean(nrmses))
+            self.write_log(self.writer, 'lr_sr', cur_lr, epoch)
+            cur_lr_d = self.lr_controller.on_epoch_end(epoch, np.mean(nrmses))
+            self.write_log(self.writer, 'lr_d', cur_lr_d, epoch)
             self.write_log(self.writer, val_names[0], np.mean(mses), epoch)
             self.write_log(self.writer, val_names[1], np.mean(ssims), epoch)
             self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
             self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
             self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
-            # self.write_log(self.writer, 'lr_g', curlr_g, epoch)
-            # self.write_log(self.writer, 'lr_d', curlr_d, epoch)
+
 
         else:
             plt.figure(figsize=(22, 6))

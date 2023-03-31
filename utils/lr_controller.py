@@ -43,7 +43,7 @@ class ReduceLROnPlateau():
         self._reset()
 
     def on_epoch_end(self, epoch, curmonitor):
-        curlr = K.get_value(self.model.optimizer.lr)
+        curlr = K.get_value(self.model.optimizer.learning_rate)
         self.curmonitor = curmonitor
         if self.curmonitor is None:
             warnings.warn('errro input of monitor', RuntimeWarning)
