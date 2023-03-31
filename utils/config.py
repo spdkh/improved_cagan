@@ -58,9 +58,9 @@ def parse_args():
     parser.add_argument("--load_weights", type=int, default=0)
     parser.add_argument("--weight_wf_loss", type=float, default=0)
     parser.add_argument("--unrolling_iter", type=int, default=0)
-    parser.add_argument("--mae_loss", type=float, default=1)
-    parser.add_argument("--mse_loss", type=float, default=0)
-    parser.add_argument("--ssim_loss", type=float, default=0)
+    parser.add_argument("--mae_loss", type=float, default=0)
+    parser.add_argument("--mse_loss", type=float, default=1)
+    parser.add_argument("--ssim_loss", type=float, default=1)
     parser.add_argument("--gan_loss", type=float, default=0)
 
     default_iterations = 20000
@@ -76,7 +76,7 @@ def parse_args():
                         type=int, default=5)
 
     # Generator Setup
-    parser.add_argument("--start_lr", type=float, default=1e-4)
+    parser.add_argument("--start_lr", type=float, default=1e-3)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
     parser.add_argument("--train_generator_times", type=int, default=1)
     parser.add_argument("--opt", type=str, default="adam")

@@ -60,6 +60,7 @@ class ReduceLROnPlateau():
                 if self.wait >= self.patience:
                     old_lr = float(K.get_value(self.model.optimizer.lr))
                     if old_lr > self.min_lr:
+                        print(old_lr, self.min_lr)
                         new_lr = old_lr * self.factor
                         new_lr = max(new_lr, self.min_lr)
                         K.set_value(self.model.optimizer.lr, new_lr)

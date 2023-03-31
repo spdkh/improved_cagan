@@ -108,7 +108,7 @@ class RCAN(DNN):
             mode="min",
             min_delta=1e-2,
             cooldown=0,
-            min_learning_rate=self.args.start_lr * 0.001,
+            min_lr=self.args.start_lr * 0.001,
             verbose=1,
         )
 
