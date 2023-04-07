@@ -35,20 +35,6 @@ class FixedCell(Data):
         self.output_dim = self.load_sample(out_sample_dir)
         print('output', self.output_dim)
 
-        data_name = 'SIM_fixed_cell'
-
-        self.save_weights_path = os.path.join(self.args.checkpoint_dir,
-                                              data_name,
-                                              self.args.dnn_type,
-                                              str(datetime.datetime.now().strftime("%d-%m-%Y_%H-%M")))
-
-        check_folder(self.save_weights_path)
-
-        self.sample_path = os.path.join(self.save_weights_path, 'sampled_img')
-
-        self.log_path = os.path.join(self.save_weights_path, 'graph')
-        self.data_dirs = dict()
-
         # if not os.path.exists(self.log_path):
         # check_folder(self.log_path)
 

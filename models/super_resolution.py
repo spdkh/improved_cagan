@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Conv3D, UpSampling3D, LeakyReLU, Lambda, ReL
 from utils.common import global_average_pooling3d, conv_block3d
 
 
-def srcnn(net_input, scale=2, filters=[9, 1, 5], coeffs=[64, 32]):
+def srcnn(net_input, scale=2, filters=[9, 5, 5], coeffs=[128, 64]):
     """
     source: https://arxiv.org/pdf/1501.00092.pdf
     important: deeper is not better here

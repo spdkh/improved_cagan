@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 import os
+import datetime
+
 import numpy as np
 import tifffile as tiff
 from matplotlib import pyplot as plt
 from skimage.measure import block_reduce
 
 from utils.fcns import prctile_norm, max_norm, min_max_norm, reorder
+from utils.fcns import check_folder
 
 
 class Data(ABC):
@@ -17,6 +20,29 @@ class Data(ABC):
                  'max': max_norm,
                  'min_max': min_max_norm}
         self.norm = norms[self.args.norm]
+
+        data_name = self.args.dataset
+
+        chkpnt_folder_name = '_'.join([data_name,
+                                       self.args.dnn_type,
+                                       datetime.datetime.now().strftime("%d-%m-%Y_time%H%M")])
+
+        self.save_weights_path = os.path.join(self.args.checkpoint_dir,
+                                              chkpnt_folder_name)
+
+        print(self.save_weights_path)
+        check_folder(self.save_weights_path)
+
+        self.sample_path = os.path.join(self.save_weights_path,
+                                        'sampled_img')
+
+        self.log_path = os.path.join(self.args.checkpoint_dir,
+                                     'graph',
+                                     chkpnt_folder_name)
+        self.data_dirs = dict()
+
+        #     check_folder(self.log_path)
+
 
     def load_sample(self, path, show=0):
         """

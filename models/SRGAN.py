@@ -6,8 +6,7 @@ from utils.lr_controller import ReduceLROnPlateau
 
 from models.GAN import GAN
 from models.binary_classification import discriminator
-from models.super_resolution import rcan
-from utils.fcns import check_folder
+from models.super_resolution import srcnn
 from utils.autoclip_tf import AutoClipper
 
 import datetime
@@ -29,7 +28,7 @@ from skimage.metrics import mean_squared_error as compare_mse, \
 from matplotlib import pyplot as plt
 
 
-class CAGAN(GAN):
+class SRGAN(GAN):
     """
 
     """
@@ -424,7 +423,7 @@ class CAGAN(GAN):
         return disc, frozen_disc
 
     def generator(self, g_input):
-        self.g_output = rcan(g_input)
+        self.g_output = srcnn(g_input)
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
         tf.keras.utils.plot_model(gen, show_shapes=True, dpi=64)
@@ -455,7 +454,6 @@ class CAGAN(GAN):
 
         output = mae_loss + mse_loss + ssim_loss
         return output
-
 
 def create_psf_loss(psf):
     def loss_wf(y_true, y_pred):

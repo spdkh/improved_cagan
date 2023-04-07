@@ -2,13 +2,11 @@
     author: SPDKH
 """
 import os
-import datetime
 
 import numpy as np
 
 from data.data import Data
 from utils import fcns
-from utils.fcns import check_folder
 from utils.psf_generator import Parameters3D, cal_psf_3d, psf_estimator_3d
 
 
@@ -37,28 +35,6 @@ class FairSIM(Data):
         self.output_dim = self.load_sample(out_sample_dir)
         print('output', self.output_dim)
 
-        data_name = 'FairSIM'
-
-        chkpnt_folder_name = '_'.join([data_name,
-                              self.args.dnn_type,
-                              datetime.datetime.now().strftime("%d-%m-%Y_time%H%M")])
-
-        self.save_weights_path = os.path.join(self.args.checkpoint_dir,
-                                              chkpnt_folder_name)
-
-        print(self.save_weights_path)
-        check_folder(self.save_weights_path)
-
-        self.sample_path = os.path.join(self.save_weights_path,
-                                        'sampled_img')
-
-        self.log_path = os.path.join(self.args.checkpoint_dir,
-                                     'graph',
-                                     chkpnt_folder_name)
-        self.data_dirs = dict()
-
-        #     check_folder(self.log_path)
-
         for data_group in self.data_groups.keys():
             self.data_dirs[data_group] = os.path.join(self.args.data_dir,
                                                       self.data_groups[data_group])
@@ -68,6 +44,7 @@ class FairSIM(Data):
                                  self.data_types[data_type])
 
         print(self.data_dirs)
+
         self.psf = self.init_psf()
 
     def init_psf(self):
