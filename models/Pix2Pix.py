@@ -54,7 +54,7 @@ class Pix2Pix(GAN):
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
         # optimizer_d = self.args.d_opt
-        # optimizer_g = self.args.g_opt
+        # optimizer_g = self.args.opt
 
         self.disc = None
         self.frozen_d = None

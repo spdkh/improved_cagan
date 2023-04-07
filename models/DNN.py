@@ -12,6 +12,7 @@ from data.data import Data
 from data.fairsim import FairSIM
 from data.fixed_cell import FixedCell
 
+
 class DNN(ABC):
     """
         Abstract class for DNN architectures
@@ -29,7 +30,7 @@ class DNN(ABC):
 
         self.data = Data(self.args)
 
-        self.optimizer = self.args.g_opt
+        self.optimizer = self.args.opt
 
         # data_name = self.args.data_dir.split('/')[-1]
 
@@ -45,15 +46,18 @@ class DNN(ABC):
         # self.data = datasets[self.args.dataset](self.args)
         self.scale_factor = int(self.data.output_dim[0] / \
                                 self.data.input_dim[0])
+
+        self.writer = tf.summary.create_file_writer(self.data.log_path)
+        self.write_log(self.writer, 'params', self.args)
         super().__init__()
 
     def batch_iterator(self, mode='train'):
         # how many total data in that mode exists
         data_size = len(os.listdir(self.data.data_dirs['x' + mode]))
-        if data_size // self.args.batch_size - self.args.batch_size <= self.batch_id[mode]:
+        if data_size // self.args.batch_size - 1 <= self.batch_id[mode]:
             self.batch_id[mode] = 0
-
-        self.batch_id[mode] += 1
+        else:
+            self.batch_id[mode] += 1
         return self.batch_id[mode]
 
     @abstractmethod
@@ -139,7 +143,7 @@ class DNN(ABC):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def write_log(self, writer, names, logs, batch_no):
+    def write_log(self, writer, names, logs, batch_no=0):
         """
         todo: test
         Parameters
@@ -149,5 +153,11 @@ class DNN(ABC):
         batch_no
         """
         with writer.as_default():
-            tf.summary.scalar(names, logs, step=batch_no)
+            try:
+                tf.summary.scalar(names, logs, step=batch_no)
+            except:
+                tf.summary.text(names,
+                                tf.convert_to_tensor(str(logs),
+                                                     dtype=tf.string),
+                                step=batch_no)
             writer.flush()

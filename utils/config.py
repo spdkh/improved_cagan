@@ -5,6 +5,7 @@
 """
 import argparse
 import random
+import numpy as np
 
 from utils.fcns import check_folder
 
@@ -55,24 +56,35 @@ def parse_args():
                         help='The type of GAN', required=False)
 
     parser.add_argument("--load_weights", type=int, default=0)
-
     parser.add_argument("--weight_wf_loss", type=float, default=0)
-    parser.add_argument("--train_discriminator_times", type=int, default=1)
-    parser.add_argument("--train_generator_times", type=int, default=3)
-    parser.add_argument("--unrolling_iter", type=int, default=2)
+    parser.add_argument("--unrolling_iter", type=int, default=0)
+    parser.add_argument("--mae_loss", type=float, default=0)
+    parser.add_argument("--mse_loss", type=float, default=1)
+    parser.add_argument("--ssim_loss", type=float, default=1)
+    parser.add_argument("--gan_loss", type=float, default=0)
 
-    parser.add_argument('--epoch', type=int, default=20000, help='The number of epochs to run')
-    parser.add_argument("--sample_interval", type=int, default=100)
-    parser.add_argument("--validate_interval", type=int, default=200)
-    parser.add_argument("--validate_num", type=int, default=200)
-    parser.add_argument('--batch_size', type=int, default=2,
+    default_iterations = 20000
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='The size of batch')
+    parser.add_argument('--epoch', type=int,
+                        default=default_iterations, help='The number of epochs to run')
+    parser.add_argument("--sample_interval",
+                        type=int, default=int(10 * (1 + np.log10(default_iterations // 50))))
+    parser.add_argument("--validate_interval",
+                        type=int, default=5)
+    parser.add_argument("--validate_num",
+                        type=int, default=5)
 
+    # Generator Setup
+    parser.add_argument("--start_lr", type=float, default=1e-3)
+    parser.add_argument("--lr_decay_factor", type=float, default=0.5)
+    parser.add_argument("--train_generator_times", type=int, default=1)
+    parser.add_argument("--opt", type=str, default="adam")
+
+    # Discriminator Setup
     parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
-    parser.add_argument("--g_start_lr", type=float, default=1e-6)  # 1e-4
-    parser.add_argument("--lr_decay_factor", type=float, default=0.9)
-
-    parser.add_argument("--g_opt", type=str, default="adam")
+    parser.add_argument("--d_lr_decay_factor", type=float, default=0.5)
+    parser.add_argument("--train_discriminator_times", type=int, default=0)
     parser.add_argument("--d_opt", type=str, default="adam")
 
     parser.add_argument("--norm", type=str, default='max',
@@ -86,8 +98,8 @@ def parse_args():
                         help='Directory name to save training logs')
 
     parser.add_argument("--wave_len", type=int, default=525)
-    parser.add_argument("--n_ResGroup", type=int, default=3)
-    parser.add_argument("--n_RCAB", type=int, default=5)
+    parser.add_argument("--n_ResGroup", type=int, default=10)
+    parser.add_argument("--n_RCAB", type=int, default=200)
     parser.add_argument("--n_channel", type=int, default=64)
 
     parser.add_argument("--n_phases", type=int, default=5)

@@ -37,10 +37,13 @@ class CAGAN(GAN):
     def __init__(self, args):
         GAN.__init__(self, args)
 
+        self.d_loss_object = None
+        self.lr_controller = None
+        self.d_lr_controller = None
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
         self.disc_opt = tf.keras.optimizers.Adam(args.d_start_lr,
-                                                 beta_1=args.lr_decay_factor)
+                                                 beta_1=args.d_lr_decay_factor)
 
     def build_model(self):
         """
@@ -68,40 +71,46 @@ class CAGAN(GAN):
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
 
-        if self.args.g_opt == "adam":
-            g_opt = tf.keras.optimizers.Adam(
-                self.args.g_start_lr,
+        if self.args.opt == "adam":
+            opt = tf.keras.optimizers.Adam(
+                self.args.start_lr,
                 gradient_transformers=[AutoClipper(20)]
             )
         else:
-            g_opt = self.args.g_opt
+            opt = self.args.opt
 
-        self.gen.compile(loss=[loss_mse_ssim_3d, gen_loss, loss_wf],
-                         optimizer=g_opt,
-                         loss_weights=[1, 0.1, self.args.weight_wf_loss])
+        self.lr_controller = ReduceLROnPlateau(
+            model=self.gen,
+            factor=self.args.lr_decay_factor,
+            patience=3,
+            mode="min",
+            min_delta=1e-2,
+            cooldown=0,
+            min_lr=self.args.start_lr * 0.001,
+            verbose=1,
+        )
 
-        # self.lr_controller_g = ReduceLROnPlateau(model=self.gen,
-        #                                          factor=self.args.lr_decay_factor,
-        #                                          patience=10,
-        #                                          mode='min',
-        #                                          min_delta=1e-3,
-        #                                          cooldown=0,
-        #                                          min_learning_rate=self.args.g_start_lr * 0.1,
-        #                                          verbose=1)
-        #
-        # self.lr_controller_d = ReduceLROnPlateau(model=self.disc,
-        #                                          factor=self.args.lr_decay_factor,
-        #                                          patience=10,
-        #                                          mode='min',
-        #                                          min_delta=1e-3,
-        #                                          cooldown=0,
-        #                                          min_learning_rate=self.args.d_start_lr * 0.1,
-        #                                          verbose=1)
+        self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
+                         optimizer=opt,
+                         loss_weights=[1,
+                                       self.args.gan_loss,
+                                       self.args.weight_wf_loss])
+
+        self.lr_controller_d = ReduceLROnPlateau(
+            model=self.disc,
+            factor=self.args.d_lr_decay_factor,
+            patience=3,
+            mode="min",
+            min_delta=1e-2,
+            cooldown=0,
+            min_learning_rate=self.args.d_start_lr * 0.001,
+            verbose=1,
+        )
 
         self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         # checkpoint_dir = './training_checkpoints'
         # checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.g_opt,
+        # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.opt,
         #                                  discriminator_optimizer=self.args.d_opt,
         #                                  generator=self.gen,
         #                                  discriminator=self.disc)
@@ -124,6 +133,7 @@ class CAGAN(GAN):
         """
 
         start_time = datetime.datetime.now()
+        self.lr_controller.on_train_begin()
         train_names = ['Generator_loss', 'Discriminator_loss']
 
         print('Training...')
@@ -159,7 +169,8 @@ class CAGAN(GAN):
         todo: disc part is absolutely wrong: use pix2pix code instead
             https://www.tensorflow.org/tutorials/generative/pix2pix
         """
-
+        disc_loss = 0
+        loss_generator = 0
         batch_size_d = self.args.batch_size
         valid_d = np.ones(batch_size_d).reshape((batch_size_d, 1))
         fake_d = np.zeros(batch_size_d).reshape((batch_size_d, 1))
@@ -242,7 +253,7 @@ class CAGAN(GAN):
         # -------------------------------------------------------------------
         #                       about Tensor Board
         # -------------------------------------------------------------------
-        self.writer = tf.summary.create_file_writer(self.data.log_path)
+
         val_names = ['val_MSE',
                      'val_SSIM',
                      'val_PSNR',
@@ -299,27 +310,28 @@ class CAGAN(GAN):
 
         if sample == 0:
             # if best, save weights.best
-            self.gen.save_weights(self.data.save_weights_path +
-                                  'weights_gen_latest.h5')
-            self.disc.save_weights(self.data.save_weights_path +
-                                   'weights_disc_latest.h5')
+            self.gen.save_weights(os.path.join(self.data.save_weights_path,
+                                  'weights_gen_latest.h5'))
+            self.disc.save_weights(os.path.join(self.data.save_weights_path,
+                                   'weights_disc_latest.h5'))
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.gen.save_weights(self.data.save_weights_path +
-                                      'weights_gen_best.h5')
-                self.disc.save_weights(self.data.save_weights_path +
-                                       'weights_disc_best.h5')
+                self.gen.save_weights(os.path.join(self.data.save_weights_path,
+                                      'weights_gen_best.h5'))
+                self.disc.save_weights(os.path.join(self.data.save_weights_path,
+                                       'weights_disc_best.h5'))
 
             validate_nrmse.append(np.mean(nrmses))
-            # curlr_g = self.lr_controller_g.on_epoch_end(epoch, np.mean(nrmses))
-            # curlr_d = self.lr_controller_d.on_epoch_end(epoch, np.mean(nrmses))
+            cur_lr = self.lr_controller.on_epoch_end(epoch, np.mean(nrmses))
+            self.write_log(self.writer, 'lr_sr', cur_lr, epoch)
+            cur_lr_d = self.lr_controller.on_epoch_end(epoch, np.mean(nrmses))
+            self.write_log(self.writer, 'lr_d', cur_lr_d, epoch)
             self.write_log(self.writer, val_names[0], np.mean(mses), epoch)
             self.write_log(self.writer, val_names[1], np.mean(ssims), epoch)
             self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
             self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
             self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
-            # self.write_log(self.writer, 'lr_g', curlr_g, epoch)
-            # self.write_log(self.writer, 'lr_d', curlr_d, epoch)
+
 
         else:
             plt.figure(figsize=(22, 6))
@@ -426,22 +438,23 @@ class CAGAN(GAN):
 
         return gen_loss
 
+    def loss_mse_ssim_3d(self, y_true, y_pred):
+        ssim_para = self.args.ssim_loss
+        mse_para = self.args.mse_loss
+        mae_para = self.args.mae_loss
 
-def loss_mse_ssim_3d(y_true, y_pred):
-    ssim_para = 1e-1  # 1e-2
-    mse_para = 1
+        # SSIM loss and MSE loss
+        x = K.permute_dimensions(y_true, (0, 4, 1, 2, 3))
+        y = K.permute_dimensions(y_pred, (0, 4, 1, 2, 3))
+        x = (x - K.min(x)) / (K.max(x) - K.min(x))
+        y = (y - K.min(y)) / (K.max(y) - K.min(y))
 
-    # SSIM loss and MSE loss
-    x = K.permute_dimensions(y_true, (0, 4, 1, 2, 3))
-    y = K.permute_dimensions(y_pred, (0, 4, 1, 2, 3))
-    x = (x - K.min(x)) / (K.max(x) - K.min(x))
-    y = (y - K.min(y)) / (K.max(y) - K.min(y))
+        ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1))/2)
+        mse_loss = mse_para * K.mean(K.square(y - x))
+        mae_loss = mae_para * K.mean(K.abs(y - x))
 
-    ssim_loss = ssim_para * (1 - K.mean(tf.image.ssim(x, y, 1)))
-    mse_loss = mse_para * K.mean(K.square(y - x))
-
-    output = mse_loss + ssim_loss
-    return output
+        output = mae_loss + mse_loss + ssim_loss
+        return output
 
 
 def create_psf_loss(psf):

@@ -25,11 +25,9 @@ class GAN(DNN):
         self.g_output = None
         self.d_output = None
 
-        self.writer = None
         self.disc = None
         self.frozen_d = None
         self.gen = None
-        self.lr_controller_g = None
         self.lr_controller_d = None
         self.dloss_record = []
         self.gloss_record = []

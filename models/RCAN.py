@@ -93,31 +93,17 @@ class RCAN(DNN):
         if os.path.exists(model_weights_path):
             self.model = tf.keras.models.load_model(model_weights_path)
 
-            with open(self.data.save_weights_path + '_weights_best.json') as f1:
-                data = json.load(f1)
-                self.initial_epoch = data["epoch"]
+        # for layer in self.model.layers:
+        #     print(layer.output_shape)
+        # print(self.output)
 
-            # with open(self.data.save_weights_path + 'lr_controller.pkl', 'rb') as f1:
-            #     self.lr_controller = pickle.load(f1)
-
-            print(
-                "Loading weights successfully: "
-                + self.data.save_weights_path + "weights_best")
-            
-            if self.args.g_opt == "adam":
-                opt = tf.keras.optimizers.Adam(
-                    self.args.g_start_lr,
-                    gradient_transformers=[AutoClipper(20)]
-                )
+        if self.args.opt == "adam":
+            opt = tf.keras.optimizers.Adam(
+                self.args.start_lr,
+                gradient_transformers=[AutoClipper(20)]
+            )
         else:
-            sys.setrecursionlimit(10 ** 4)
-            output = rcan(
-                self.input, scale=2,
-                channel=self.args.n_channel,
-                n_res_group=self.args.n_ResGroup,
-                n_rcab=self.args.n_RCAB)
-            # print(output)
-            self.model = Model(inputs=self.input, outputs=output)
+            opt = self.args.opt
 
             for layer in self.model.layers:
                 print(layer.output_shape)
@@ -145,7 +131,7 @@ class RCAN(DNN):
             mode="min",
             min_delta=1e-2,
             cooldown=0,
-            min_learning_rate=self.args.g_start_lr * 0.001,
+            min_lr=self.args.start_lr * 0.001,
             verbose=1,
         )
 
