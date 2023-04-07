@@ -10,3 +10,6 @@ train with 100 epochs:
 
     python -m train --epoch 100
 
+To enable unrolling with 2 unrolling layers you can use:
+
+    python -m train --dnn_type UCAGAN --unrolling_iter 3

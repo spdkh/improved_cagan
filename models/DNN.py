@@ -6,6 +6,8 @@ from __future__ import division
 import os
 import re
 from abc import ABC, abstractmethod
+
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from data.data import Data
@@ -48,7 +50,12 @@ class DNN(ABC):
                                 self.data.input_dim[0])
 
         self.writer = tf.summary.create_file_writer(self.data.log_path)
-        self.write_log(self.writer, 'params', self.args)
+
+        # print(params_log)
+        # display(params_log)
+        print(log_generator(vars(self.args)))
+        self.write_log(self.writer, 'params', log_generator(vars(self.args)))
+        # self.write_log(self.writer, 'params values', '\t_\t'.join(map(str, vars(self.args).values())))
         super().__init__()
 
     def batch_iterator(self, mode='train'):
@@ -161,3 +168,12 @@ class DNN(ABC):
                                                      dtype=tf.string),
                                 step=batch_no)
             writer.flush()
+
+def log_generator(data):
+    data = str(data).split(',')
+
+    params_log = ''
+    for d in data:
+        spacer = (100 - len(d)) * '.'
+        params_log += d + spacer + '\n'
+    return params_log

@@ -7,6 +7,7 @@ import sys
 import tensorflow as tf
 
 # ________________ architecture Variants
+from models.SRGAN import SRGAN
 from models.CAGAN import CAGAN
 from models.UCAGAN import UCAGAN
 from models.CGAN import CGAN
@@ -29,6 +30,7 @@ def main():
 
     # open session
     model_fns = {'CAGAN': CAGAN,
+                 'SRGAN': SRGAN,
                  'CGAN': CGAN,
                  'DNN': DNN,
                  'UCAGAN': UCAGAN,

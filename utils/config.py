@@ -45,26 +45,26 @@ def parse_args():
     desc = "Tensorflow implementation of GAN collections"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--dataset', type=str, default='FairSIM',
-                        help='FixedCell or FairSIM')
     parser.add_argument("--data_dir", type=str,
-                        default="D:\\Data\\FairSIM\\cropped2d_128",
+                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
                         # default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
                         help='The directory of the data')
-    parser.add_argument('--dnn_type', type=str, default='CAGAN',
-                        choices=['CAGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
+    parser.add_argument('--dataset', type=str, default='FixedCell',
+                        help='FixedCell or FairSIM')
+    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
+                        choices=['CAGAN', 'SRGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
                         help='The type of GAN', required=False)
 
-    parser.add_argument("--load_weights", type=int, default=0)
+    parser.add_argument("--load_weights", type=int, default=0, choices=range(2))
     parser.add_argument("--weight_wf_loss", type=float, default=0)
-    parser.add_argument("--unrolling_iter", type=int, default=0)
+    parser.add_argument("--unrolling_iter", type=int, default=2, choices=range(5))
     parser.add_argument("--mae_loss", type=float, default=0)
     parser.add_argument("--mse_loss", type=float, default=1)
-    parser.add_argument("--ssim_loss", type=float, default=1)
+    parser.add_argument("--ssim_loss", type=float, default=0)
     parser.add_argument("--gan_loss", type=float, default=0)
 
-    default_iterations = 20000
-    parser.add_argument('--batch_size', type=int, default=16,
+    default_iterations = 800
+    parser.add_argument('--batch_size', type=int, default=2, choices=range(2, 16),
                         help='The size of batch')
     parser.add_argument('--epoch', type=int,
                         default=default_iterations, help='The number of epochs to run')
@@ -76,7 +76,7 @@ def parse_args():
                         type=int, default=5)
 
     # Generator Setup
-    parser.add_argument("--start_lr", type=float, default=1e-3)
+    parser.add_argument("--start_lr", type=float, default=1e-4)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
     parser.add_argument("--train_generator_times", type=int, default=1)
     parser.add_argument("--opt", type=str, default="adam")
