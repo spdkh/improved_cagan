@@ -98,9 +98,9 @@ def parse_args():
                         help='Directory name to save training logs')
 
     parser.add_argument("--wave_len", type=int, default=525)
-    parser.add_argument("--n_ResGroup", type=int, default=10)
-    parser.add_argument("--n_RCAB", type=int, default=200)
-    parser.add_argument("--n_channel", type=int, default=64)
+    parser.add_argument("--n_ResGroup", type=int, default=3)
+    parser.add_argument("--n_RCAB", type=int, default=5)
+    parser.add_argument("--n_channel", type=int, default=32)
 
     parser.add_argument("--n_phases", type=int, default=5)
     parser.add_argument("--n_angles", type=int, default=3)
