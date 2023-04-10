@@ -47,7 +47,7 @@ def parse_args():
 
     parser.add_argument("--data_dir", type=str,
                         default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
-                        # default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+                        # default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
     parser.add_argument('--dataset', type=str, default='FixedCell',
                         help='FixedCell or FairSIM')
@@ -97,7 +97,7 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default='logs',
                         help='Directory name to save training logs')
 
-    parser.add_argument("--wave_len", type=int, default=525)
+
     parser.add_argument("--n_ResGroup", type=int, default=3)
     parser.add_argument("--n_RCAB", type=int, default=5)
     parser.add_argument("--n_channel", type=int, default=32)

@@ -7,6 +7,8 @@ import tifffile as tiff
 from matplotlib import pyplot as plt
 from skimage.measure import block_reduce
 
+from utils.psf_generator import Parameters3D, cal_psf_3d, psf_estimator_3d
+
 from utils.fcns import prctile_norm, max_norm, min_max_norm, reorder
 from utils.fcns import check_folder
 
@@ -40,7 +42,7 @@ class Data(ABC):
                                      'graph',
                                      chkpnt_folder_name)
         self.data_dirs = dict()
-
+        self.otf_path = None
         #     check_folder(self.log_path)
 
 
@@ -154,4 +156,21 @@ class Data(ABC):
 
         return image_batch, gt_batch, wf_batch
 
+    def init_psf(self):
+        # --------------------------------------------------------------------------------
+        #                             Read OTF and PSF
+        # --------------------------------------------------------------------------------
+        # 128*128*11 otf and psf numpy array
+        psf, _ = cal_psf_3d(self.otf_path,
+                            self.input_dim[:-1])
+
+        print(np.shape(psf))
+        return psf
+        sigma_y, sigma_x, sigma_z = psf_estimator_3d(psf)  # Find the most effective region of OTF
+        ksize = int(sigma_y * 4)
+        halfy = self.input_dim[1] // 2
+        psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
+        print(np.shape(psf))
+        return np.reshape(psf,
+                          (ksize * 2, 2 * ksize, 11, 1)).astype(np.float32)
 
