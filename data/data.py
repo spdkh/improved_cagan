@@ -45,7 +45,6 @@ class Data(ABC):
         self.otf_path = None
         #     check_folder(self.log_path)
 
-
     def load_sample(self, path, show=0):
         """
         convert any type of data to [x, y, z, ch] then return dimension

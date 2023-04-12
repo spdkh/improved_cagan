@@ -76,7 +76,7 @@ class UCAGAN(CAGAN):
             # x = x[:, :, :, :, 0]
             x = tf.add(initial_x, x)
 
-            y = self.conv3d(x, kernel_T)
+            y = self.conv3d(initial_x, kernel_T)
             ya = tf.multiply(y, alpha)
             x = tf.add(x, ya)
             F = tf.signal.fft3d(tf.cast(x,
@@ -95,7 +95,7 @@ class UCAGAN(CAGAN):
 
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-        tf.keras.utils.plot_model(gen, show_shapes=True, dpi=64)
+        tf.keras.utils.plot_model(gen, tofile='Unrolled_generator.png', show_shapes=True, dpi=64)
         return gen
 
     def conv3d(self, x, psf):

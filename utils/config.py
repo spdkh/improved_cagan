@@ -52,43 +52,55 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='FixedCell',
                         help='FixedCell or FairSIM')
     parser.add_argument('--dnn_type', type=str, default='UCAGAN',
-                        choices=['CAGAN', 'SRGAN', 'UCAGAN', 'CGAN', 'SRGAN', 'UGAN', 'RCAN'],
-                        help='The type of GAN', required=False)
+                        choices=['CAGAN',
+                                 'SRGAN',
+                                 'UCAGAN',
+                                 'CGAN',
+                                 'SRGAN',
+                                 'UGAN',
+                                 'RCAN'],
+                        help='The type of GAN')
 
-    parser.add_argument("--load_weights", type=int, default=0, choices=range(2))
+    parser.add_argument("--load_weights", type=int, default=0,
+                        choices=range(2))
     parser.add_argument("--weight_wf_loss", type=float, default=0)
-    parser.add_argument("--unrolling_iter", type=int, default=2, choices=range(5))
+    parser.add_argument("--unrolling_iter", type=int, default=2,
+                        choices=range(5))
     parser.add_argument("--mae_loss", type=float, default=0)
     parser.add_argument("--mse_loss", type=float, default=1)
     parser.add_argument("--ssim_loss", type=float, default=0)
-    parser.add_argument("--gan_loss", type=float, default=0)
+    parser.add_argument("--gan_loss", type=float, default=0.1)
 
     default_iterations = 800
-    parser.add_argument('--batch_size', type=int, default=2, choices=range(2, 16),
+    parser.add_argument('--batch_size', type=int, default=2,
+                        choices=range(2, 16),
                         help='The size of batch')
     parser.add_argument('--epoch', type=int,
                         default=default_iterations, help='The number of epochs to run')
     parser.add_argument("--sample_interval",
                         type=int, default=int(10 * (1 + np.log10(default_iterations // 50))))
-    parser.add_argument("--validate_interval",
-                        type=int, default=5)
-    parser.add_argument("--validate_num",
-                        type=int, default=5)
+    parser.add_argument("--validate_interval", type=int, default=5)
+    parser.add_argument("--validate_num", type=int, default=5)
 
     # Generator Setup
     parser.add_argument("--start_lr", type=float, default=1e-4)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_generator_times", type=int, default=1)
+    parser.add_argument("--train_generator_times", type=int, default=3)
     parser.add_argument("--opt", type=str, default="adam")
 
     # Discriminator Setup
     parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
     parser.add_argument("--d_lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_discriminator_times", type=int, default=0)
+    parser.add_argument("--train_discriminator_times", type=int, default=1)
     parser.add_argument("--d_opt", type=str, default="adam")
 
     parser.add_argument("--norm", type=str, default='max',
-                        help='Image normalization Method. Current options include: max, min_max, prctile')
+                        help='Image normalization Method.',
+                        choices=['max',
+                                'min_max',
+                                'prctile'])
+    parser.add_argument("--seed", type=int, default=12345)
+
 
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
                         help='Directory name to save the checkpoints')

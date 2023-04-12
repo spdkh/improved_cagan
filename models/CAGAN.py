@@ -420,14 +420,14 @@ class CAGAN(GAN):
         frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
         frozen_disc.trainable = False
 
-        tf.keras.utils.plot_model(disc, show_shapes=True, dpi=64)
+        tf.keras.utils.plot_model(disc, tofile='discriminator.png',show_shapes=True, dpi=64)
         return disc, frozen_disc
 
     def generator(self, g_input):
         self.g_output = rcan(g_input)
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-        tf.keras.utils.plot_model(gen, show_shapes=True, dpi=64)
+        tf.keras.utils.plot_model(gen, tofile='generator.png', show_shapes=True, dpi=64)
         return gen
 
     def generator_loss(self, disc_generated_output):
