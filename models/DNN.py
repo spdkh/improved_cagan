@@ -8,6 +8,7 @@ import re
 from abc import ABC, abstractmethod
 
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from data.data import Data
@@ -55,7 +56,7 @@ class DNN(ABC):
         # display(params_log)
         print(log_generator(vars(self.args)))
         self.write_log(self.writer, 'params', log_generator(vars(self.args)))
-        # self.write_log(self.writer, 'params values', '\t_\t'.join(map(str, vars(self.args).values())))
+
         super().__init__()
 
     def batch_iterator(self, mode='train'):
@@ -174,6 +175,6 @@ def log_generator(data):
 
     params_log = ''
     for d in data:
-        spacer = (100 - len(d)) * '.'
+        spacer = (150 - len(d)) * '.'
         params_log += d + spacer + '\n'
     return params_log

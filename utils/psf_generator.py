@@ -12,6 +12,8 @@ from numpy import asarray as ar, exp
 from scipy.io import loadmat
 from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
+from utils.read_mrc import read_mrc
+import tifffile as tiff
 
 
 class Parameters3D:
@@ -58,7 +60,7 @@ def prctile_norm(x, min_prc=0, max_prc=100):
     return y
 
 
-def cal_psf_3d(otf_path, Ny, Nx, Nz, dky, dkx, dkz):
+def cal_psf_3d(otf_path, dim):
     """
     :param otf_path:
     :param Ny:
@@ -69,7 +71,20 @@ def cal_psf_3d(otf_path, Ny, Nx, Nz, dky, dkx, dkz):
     :param dkz:
     :return:
     """
+    curOTF = None
+    PSF = None
     if 'mrc' in otf_path:
+        print(dim)
+        Ny, Nx, Nz = dim
+
+        dx = 61e-3 / 2
+        dy = 61e-3 / 2
+        dz = 160e-3
+        dxy = dx
+        dkx = 1 / (Nx * dx)
+        dky = 1 / (Ny * dy)
+        dkz = 1 / (Nz * dz)
+
         headerotf, rawOTF = read_mrc(otf_path)
         dkr = np.min([dkx, dky])
         nxotf = headerotf[0][0]
@@ -121,7 +136,6 @@ def cal_psf_3d(otf_path, Ny, Nx, Nz, dky, dkx, dkz):
         y = np.arange(-Ny / 2, Ny / 2, 1) * dky
         [X, Y] = np.meshgrid(x, y)
         rdist = np.sqrt(np.square(X) + np.square(Y))
-
         curOTF = np.zeros((Ny, Nx, Nz))
         otflen = np.size(OTF, 1)
         x = np.arange(0, otflen * dkr, dkr)
@@ -142,8 +156,19 @@ def cal_psf_3d(otf_path, Ny, Nx, Nz, dky, dkx, dkz):
     elif 'mat' in otf_path:
         PSF = loadmat(otf_path)
         curOTF = None
+
         PSF = PSF['h']
         # print(np.shape(PSF))
+    elif 'tif' in otf_path:
+        curOTF = np.transpose(tiff.imread(otf_path),
+                           (1, 2, 0))
+        PSF = F.fftshift(F.fft(curOTF))
+        curOTF = None
+        PSF = np.abs(PSF)
+        PSF = PSF / np.max(PSF)
+
+        PSF = np.expand_dims(PSF, axis=-1)
+        print(np.shape(PSF))
     return PSF, curOTF
 
 
