@@ -93,22 +93,15 @@ class RCAN(DNN):
         if os.path.exists(model_weights_path):
             self.model = tf.keras.models.load_model(model_weights_path)
 
-        # for layer in self.model.layers:
-        #     print(layer.output_shape)
-        # print(self.output)
-
-        if self.args.opt == "adam":
-            opt = tf.keras.optimizers.Adam(
-                self.args.start_lr,
-                gradient_transformers=[AutoClipper(20)]
-            )
+            if self.args.opt == "adam":
+                opt = tf.keras.optimizers.Adam(
+                    self.args.start_lr,
+                    gradient_transformers=[AutoClipper(20)]
+                )
+            else:
+                opt = self.args.opt
+        
         else:
-            opt = self.args.opt
-
-            for layer in self.model.layers:
-                print(layer.output_shape)
-            print(self.output)
-
             # self.loss_object = loss_mse_ssim_3d
             self.loss_object = tf.keras.losses.MeanAbsoluteError()
 
@@ -123,6 +116,10 @@ class RCAN(DNN):
 
             self.model.compile(loss=self.loss_object,
                                optimizer=opt)
+        
+        # for layer in self.model.layers:
+        #     print(layer.output_shape)
+        # print(self.output)
 
         self.lr_controller = ReduceLROnPlateau(
             model=self.model,
