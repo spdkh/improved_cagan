@@ -105,14 +105,14 @@ class RCAN(DNN):
             # self.loss_object = loss_mse_ssim_3d
             self.loss_object = tf.keras.losses.MeanAbsoluteError()
 
-            if self.args.g_opt == "adam":
+            if self.args.opt == "adam":
                 opt = tf.keras.optimizers.Adam(
                     self.args.g_start_lr,
                     # clipnorm=10.0,
                     gradient_transformers=[AutoClipper(20)]
                 )
             else:
-                opt = self.args.g_opt
+                opt = self.args.opt
 
             self.model.compile(loss=self.loss_object,
                                optimizer=opt)
