@@ -23,7 +23,7 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --dnn_type RCAN --g_start_lr 0.001 --lr_decay_factor 0.95 --epoch 400 --sample_interval 10 --validate_interval 20
+    python -m train --dnn_type RCAN --start_lr 0.001 --lr_decay_factor 0.95 --epoch 400 --sample_interval 10 --validate_interval 20
 
 Experiment 01: Use 3.5 Implementation Details of the paper
     --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
@@ -107,7 +107,7 @@ class RCAN(DNN):
 
             if self.args.opt == "adam":
                 opt = tf.keras.optimizers.Adam(
-                    self.args.g_start_lr,
+                    self.args.start_lr,
                     # clipnorm=10.0,
                     gradient_transformers=[AutoClipper(20)]
                 )
