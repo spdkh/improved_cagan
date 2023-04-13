@@ -72,6 +72,7 @@ def cal_psf_3d(otf_path, dim):
     :return:
     """
     curOTF = None
+    PSF = None
     if 'mrc' in otf_path:
         print(dim)
         Ny, Nx, Nz = dim
@@ -155,11 +156,17 @@ def cal_psf_3d(otf_path, dim):
     elif 'mat' in otf_path:
         PSF = loadmat(otf_path)
         curOTF = None
+
         PSF = PSF['h']
         # print(np.shape(PSF))
     elif 'tif' in otf_path:
-        PSF = np.transpose(tiff.imread(otf_path),
+        curOTF = np.transpose(tiff.imread(otf_path),
                            (1, 2, 0))
+        PSF = F.fftshift(F.fft(curOTF))
+        curOTF = None
+        PSF = np.abs(PSF)
+        PSF = PSF / np.max(PSF)
+
         PSF = np.expand_dims(PSF, axis=-1)
         print(np.shape(PSF))
     return PSF, curOTF

@@ -175,6 +175,6 @@ def log_generator(data):
 
     params_log = ''
     for d in data:
-        spacer = (100 - len(d)) * '.'
+        spacer = (150 - len(d)) * '.'
         params_log += d + spacer + '\n'
     return params_log

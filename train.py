@@ -27,7 +27,7 @@ def main():
     args = parse_args()
     if args is None:
         sys.exit()
-    # tf.random.set_seed(args.seed)
+    tf.random.set_seed(args.seed)
     # open session
     model_fns = {'CAGAN': CAGAN,
                  'SRGAN': SRGAN,

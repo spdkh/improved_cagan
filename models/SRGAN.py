@@ -92,8 +92,8 @@ class SRGAN(GAN):
         self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=opt,
                          loss_weights=[1,
-                                       self.args.gan_loss,
-                                       self.args.weight_wf_loss])
+                                       self.args.alpha,
+                                       self.args.beta])
 
         self.lr_controller_d = ReduceLROnPlateau(
             model=self.disc,
@@ -187,7 +187,7 @@ class SRGAN(GAN):
                                       self.batch_iterator(),
                                       batch_size_d,
                                       self.scale_factor,
-                                      self.args.weight_wf_loss)
+                                      self.args.beta)
 
             fake_input_d = self.gen.predict(input_d)
 
@@ -226,7 +226,7 @@ class SRGAN(GAN):
                                       self.batch_iterator(),
                                       self.args.batch_size,
                                       self.scale_factor,
-                                      self.args.weight_wf_loss)
+                                      self.args.beta)
             loss_generator = self.gen.train_on_batch(input_g, gt_g)
             self.gloss_record.append(loss_generator)
         return disc_loss, loss_generator

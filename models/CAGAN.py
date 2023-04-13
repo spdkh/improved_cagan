@@ -7,7 +7,6 @@ from utils.lr_controller import ReduceLROnPlateau
 from models.GAN import GAN
 from models.binary_classification import discriminator
 from models.super_resolution import rcan
-from utils.fcns import check_folder
 from utils.autoclip_tf import AutoClipper
 
 import datetime
@@ -15,9 +14,8 @@ import glob
 import sys
 import os
 
+import visualkeras
 from tensorflow.keras import backend as K
-
-from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
 from tensorflow.keras.models import Model
 import tensorflow as tf
 import numpy as np
@@ -58,13 +56,11 @@ class CAGAN(GAN):
         # print(self.gen.summary())
 
         fake_hp = self.gen(inputs=self.g_input)
-        judge = self.frozen_d(fake_hp)
+        judge = self.disc(fake_hp)
         label = np.zeros(self.args.batch_size)
 
         # last fake hp
         gen_loss = self.generator_loss(judge)
-        # temp
-        # psf = np.random.rand(128, 128, 11)
 
         loss_wf = create_psf_loss(self.data.psf)
         # gen_total_loss, gen_gan_loss, gen_l1_loss =\
@@ -90,11 +86,12 @@ class CAGAN(GAN):
             verbose=1,
         )
 
+        print('debugging:', self.args.alpha, self.args.beta)
         self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=opt,
                          loss_weights=[1,
-                                       self.args.gan_loss,
-                                       self.args.weight_wf_loss])
+                                       self.args.alpha,
+                                       self.args.beta])
 
         self.lr_controller_d = ReduceLROnPlateau(
             model=self.disc,
@@ -146,7 +143,8 @@ class CAGAN(GAN):
             tf.print("%d epoch: time: %s, g_loss = %s, d_loss= " % (
                 it + 1,
                 elapsed_time,
-                loss_generator), loss_discriminator, output_stream=sys.stdout)
+                loss_generator),
+                loss_discriminator, output_stream=sys.stdout)
 
             if (it + 1) % self.args.sample_interval == 0:
                 self.validate(it + 1, sample=1)
@@ -188,7 +186,7 @@ class CAGAN(GAN):
                                       self.batch_iterator(),
                                       batch_size_d,
                                       self.scale_factor,
-                                      self.args.weight_wf_loss)
+                                      self.args.beta)
 
             fake_input_d = self.gen.predict(input_d)
 
@@ -227,17 +225,10 @@ class CAGAN(GAN):
                                       self.batch_iterator(),
                                       self.args.batch_size,
                                       self.scale_factor,
-                                      self.args.weight_wf_loss)
+                                      self.args.beta)
             loss_generator = self.gen.train_on_batch(input_g, gt_g)
             self.gloss_record.append(loss_generator)
         return disc_loss, loss_generator
-
-    def unrolling(self, x):
-        net_input = x
-        for ui in range(self.unrolling_iter):
-            x = self.sr_cnn(net_input)
-            net_input = x
-        return x
 
     def validate(self, epoch, sample=0):
         """
@@ -417,17 +408,24 @@ class CAGAN(GAN):
         #              optimizer=self.args.d_opt,
         #              metrics=['accuracy'])
 
-        frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
-        frozen_disc.trainable = False
+        # frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
+        # frozen_disc.trainable = False
 
-        tf.keras.utils.plot_model(disc, tofile='discriminator.png',show_shapes=True, dpi=64)
-        return disc, frozen_disc
+        # tf.keras.utils.plot_model(disc, to_file='discriminator.png',show_shapes=True, dpi=64, rankdir='LR')
+        visualkeras.layered_view(disc, legend=True)  # font is optional!
+        visualkeras.layered_view(disc, to_file='Disc.png')  # write to disk
+        return disc, None
 
     def generator(self, g_input):
-        self.g_output = rcan(g_input)
+        self.g_output = rcan(g_input,
+                             n_rcab=self.args.n_RCAB,
+                             n_res_group=self.args.n_ResGroup,
+                             channel=self.args.n_channel)
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-        tf.keras.utils.plot_model(gen, tofile='generator.png', show_shapes=True, dpi=64)
+        # tf.keras.utils.plot_model(gen, to_file='generator.png', show_shapes=True, dpi=64, rankdir='LR')
+        visualkeras.layered_view(gen, legend=True)  # font is optional!
+        visualkeras.layered_view(gen, to_file='Generator.png')  # write to disk
         return gen
 
     def generator_loss(self, disc_generated_output):
