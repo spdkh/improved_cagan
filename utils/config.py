@@ -70,7 +70,7 @@ def parse_args():
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
     parser.add_argument("--gamma", type=float, default=0.2)  # weight_unrolling gamma
     parser.add_argument("--unrolling_iter", type=int, default=2,
-                        choices=range(2))
+                        choices=range(3))
 
     # Generator Setup
     parser.add_argument("--start_lr", type=float, default=1e-4)
