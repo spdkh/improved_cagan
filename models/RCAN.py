@@ -59,6 +59,7 @@ from tensorflow.keras.models import Model
 
 from data.fairsim import FairSIM
 from data.fixed_cell import FixedCell
+from models.CAGAN import create_psf_loss
 from models.DNN import DNN
 from models.super_resolution import rcan
 from utils.autoclip_tf import AutoClipper
@@ -86,6 +87,7 @@ class RCAN(DNN):
         self.initial_epoch = 0
         self.lr_controller = None
         self.loss_object = None
+        self.loss_wf = None
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
@@ -103,7 +105,15 @@ class RCAN(DNN):
         
         else:
             # self.loss_object = loss_mse_ssim_3d
-            self.loss_object = tf.keras.losses.MeanAbsoluteError()
+            if self.args.mae_loss == 1:
+                self.loss_object = tf.keras.losses.MeanAbsoluteError()
+            elif self.args.mse_loss == 1:
+                self.loss_object = tf.keras.losses.MeanSquaredError()
+            else:
+                sys.exit("mae_loss or mse_loss is needed.")
+
+            if self.args.beta>0:
+                self.loss_wf = create_psf_loss(self.data.psf)
 
             if self.args.opt == "adam":
                 opt = tf.keras.optimizers.Adam(
@@ -114,8 +124,14 @@ class RCAN(DNN):
             else:
                 opt = self.args.opt
 
-            self.model.compile(loss=self.loss_object,
-                               optimizer=opt)
+            if self.args.beta>0:
+                self.model.compile(loss=[self.loss_object, self.loss_wf],
+                                   optimizer=opt,
+                                loss_weights=[1,
+                                        self.args.beta])
+            else:
+                self.model.compile(loss=self.loss_object,
+                                   optimizer=opt)
         
         # for layer in self.model.layers:
         #     print(layer.output_shape)
