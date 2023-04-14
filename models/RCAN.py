@@ -46,9 +46,7 @@ tensorboard --logdir=
 """
 import datetime
 import glob
-import json
 import os
-import pickle
 import sys
 
 import numpy as np
@@ -83,59 +81,51 @@ class RCAN(DNN):
             os.path.join(self.data.log_path, "train"))
         self.writer_val = tf.summary.create_file_writer(
             os.path.join(self.data.log_path, "val"))
-
-        self.initial_epoch = 0
         self.lr_controller = None
-        self.loss_object = None
+
+        # self.loss_object = loss_mse_ssim_3d
+        if self.args.mae_loss == 1:
+            self.loss_object = tf.keras.losses.MeanAbsoluteError()
+        elif self.args.mse_loss == 1:
+            self.loss_object = tf.keras.losses.MeanSquaredError()
+        else:
+            sys.exit("mae_loss or mse_loss is needed.")
         self.loss_wf = None
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
-        model_weights_path = self.data.save_weights_path + "_weights_best"
-        if os.path.exists(model_weights_path):
-            self.model = tf.keras.models.load_model(model_weights_path)
+        if self.args.beta>0:
+            self.loss_wf = create_psf_loss(self.data.psf)
 
-            if self.args.opt == "adam":
-                opt = tf.keras.optimizers.Adam(
-                    self.args.start_lr,
-                    gradient_transformers=[AutoClipper(20)]
-                )
-            else:
-                opt = self.args.opt
-        
+        sys.setrecursionlimit(10 ** 4)
+        output = rcan(
+            self.input, scale=2,
+            channel=self.args.n_channel,
+            n_res_group=self.args.n_ResGroup,
+            n_rcab=self.args.n_RCAB)
+        # print(output)
+        self.model = Model(inputs=self.input, outputs=output)
+
+        # for layer in self.model.layers:
+        #     print(layer.output_shape)
+        # print(self.output)
+
+        if self.args.opt == "adam":
+            opt = tf.keras.optimizers.Adam(
+                self.args.start_lr,
+                gradient_transformers=[AutoClipper(20)]
+            )
         else:
-            # self.loss_object = loss_mse_ssim_3d
-            if self.args.mae_loss == 1:
-                self.loss_object = tf.keras.losses.MeanAbsoluteError()
-            elif self.args.mse_loss == 1:
-                self.loss_object = tf.keras.losses.MeanSquaredError()
-            else:
-                sys.exit("mae_loss or mse_loss is needed.")
+            opt = self.args.opt
 
-            if self.args.beta>0:
-                self.loss_wf = create_psf_loss(self.data.psf)
-
-            if self.args.opt == "adam":
-                opt = tf.keras.optimizers.Adam(
-                    self.args.start_lr,
-                    # clipnorm=10.0,
-                    gradient_transformers=[AutoClipper(20)]
-                )
-            else:
-                opt = self.args.opt
-
-            if self.args.beta>0:
+         if self.args.beta>0:
                 self.model.compile(loss=[self.loss_object, self.loss_wf],
                                    optimizer=opt,
                                 loss_weights=[1,
                                         self.args.beta])
-            else:
-                self.model.compile(loss=self.loss_object,
-                                   optimizer=opt)
-        
-        # for layer in self.model.layers:
-        #     print(layer.output_shape)
-        # print(self.output)
+        else:
+            self.model.compile(loss=self.loss_object,
+                           optimizer=opt)
 
         self.lr_controller = ReduceLROnPlateau(
             model=self.model,
@@ -169,7 +159,7 @@ class RCAN(DNN):
 
         train_names = ['Generator_loss']
 
-        for it in range(self.initial_epoch, self.args.epoch):
+        for it in range(self.args.epoch):
             # batch_id flag for iteration number including the inner loops
             temp_loss = []
             for b_id in range(8):
@@ -243,18 +233,13 @@ class RCAN(DNN):
                                                         uqis)
 
         if sample == 0:
-            # # if best, save weights.best
-            # self.model.save_weights(self.data.save_weights_path +
-            #                         'weights_latest.h5')
+            # if best, save weights.best
+            self.model.save_weights(self.data.save_weights_path +
+                                    'weights_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save(self.data.save_weights_path + "_weights_best")
-
-                with open(self.data.save_weights_path + '_weights_best.json', 'w') as f1:
-                    json.dump({"epoch": epoch}, f1, ensure_ascii=False, indent=2)
-
-                # with open(self.data.save_weights_path + 'lr_controller.pkl', 'wb') as f1:
-                #     pickle.dump(self.lr_controller, f1)
+                self.model.save_weights(self.data.save_weights_path +
+                                        'weights_best.h5')
 
             validate_nrmse.append(np.mean(nrmses))
 
