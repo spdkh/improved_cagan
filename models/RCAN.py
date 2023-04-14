@@ -118,14 +118,13 @@ class RCAN(DNN):
         else:
             opt = self.args.opt
 
-         if self.args.beta>0:
-                self.model.compile(loss=[self.loss_object, self.loss_wf],
-                                   optimizer=opt,
-                                loss_weights=[1,
-                                        self.args.beta])
+        if self.args.beta>0:
+            self.model.compile(loss=[self.loss_object, self.loss_wf],
+                               optimizer=opt,
+                               loss_weights=[1, self.args.beta])
         else:
             self.model.compile(loss=self.loss_object,
-                           optimizer=opt)
+                               optimizer=opt)
 
         self.lr_controller = ReduceLROnPlateau(
             model=self.model,
