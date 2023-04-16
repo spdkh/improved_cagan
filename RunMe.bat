@@ -2,26 +2,77 @@
 @REM RunMe.bat >> logs.txt
 
 
-@REM Adapt the folder in the PATH to your system
-@SET PATH=C:\ProgramData\Anaconda3\;C:\ProgramData\Anaconda3\Scripts;%PATH%
+@REM @REM Adapt the folder in the PATH to your system
+@REM @SET PATH=C:\ProgramData\Anaconda3\;C:\ProgramData\Anaconda3\Scripts;%PATH%
 
-@REM conda activate tf_gpu
-CALL activate.bat tf_gpu
+@REM @REM conda activate tf_gpu
+@REM CALL activate.bat tf_gpu
 
-@REM -------------------------------------------------------------------------
-echo "36. Starting a new training."
-echo %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
-
-python -m train --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --epoch 500 --start_lr 1e-3 --lr_decay_factor 0.5 --d_start_lr 1e-6 --d_lr_decay_factor 0.5 --alpha 0 --beta 0 --mae_loss 1 --mse_loss 0 --unrolling_iter 0
-
-@REM -------------------------------------------------------------------------
-echo "37. Starting a new training."
-echo %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
-
-python -m train --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 10 --epoch 500 --start_lr 1e-3 --lr_decay_factor 0.5 --d_start_lr 1e-6 --d_lr_decay_factor 0.5 --alpha 0 --beta 0.5 --mae_loss 1 --mse_loss 0 --unrolling_iter 0
-
-@REM ------------------------------------------------------------------------- Done FixedCell_UCAGAN_13-04-2023_time0121
-@REM echo "Starting a new training."
+@REM @REM ------------------------------------------------------------------------- Done FixedCell_RCAN_14-04-2023_time0359
+@REM echo "36. Starting a new training."
 @REM echo %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
 
-@REM python -m train --dnn_type UCAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 3 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 1 --train_discriminator_times 0 --alpha 0 --beta 0 --gamma 0.2 --mae_loss 1 --mse_loss 0 --unrolling_iter 2
+@REM python -m train --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --epoch 500 --start_lr 1e-3 --lr_decay_factor 0.5 --d_start_lr 1e-6 --d_lr_decay_factor 0.5 --alpha 0 --beta 0 --mae_loss 1 --mse_loss 0 --unrolling_iter 0
+
+@REM ------------------------------------------------------------------------- 
+echo "[=============== *************** ===============]"
+echo "36.2. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 10 --epoch 500 --start_lr 1e-3 --lr_decay_factor 0.5 --d_start_lr 1e-6 --d_lr_decay_factor 0.5 --alpha 0 --beta 0 --mae_loss 1 --mse_loss 0 --unrolling_iter 0
+
+
+@REM @REM ------------------------------------------------------------------------- Done FixedCell_RCAN_14-04-2023_time0438
+@REM echo "37. Starting a new training."
+@REM echo %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+@REM python -m train --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 10 --epoch 500 --start_lr 1e-3 --lr_decay_factor 0.5 --d_start_lr 1e-6 --d_lr_decay_factor 0.5 --alpha 0 --beta 0.5 --mae_loss 1 --mse_loss 0 --unrolling_iter 0
+
+-------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "38. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type UCAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 3 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 1 --train_discriminator_times 0 --alpha 0 --beta 0 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 2
+
+-------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "39. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type UCAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 3 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 1 --train_discriminator_times 0 --alpha 0 --beta 0.5 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 2
+
+@REM -------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "40. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type CAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 3 --train_discriminator_times 1 --alpha 0 --beta 0 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 0
+
+@REM -------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "41. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type CAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 3 --train_discriminator_times 1 --alpha 0.1 --beta 0 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 0
+
+@REM -------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "42. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type CAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 3 --train_discriminator_times 1 --alpha 0 --beta 0.5 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 0
+
+@REM -------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "43. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type CAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 5 --n_RCAB 10 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 3 --train_discriminator_times 1 --alpha 0.1 --beta 0.5 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 0
+
+-------------------------------------------------------------------------
+echo "[=============== *************** ===============]"
+echo "45. Starting a new training."
+echo "[=============== " %date:~-4% %date:~-10,2% %date:~-7,2% %time:~0,2% %time:~3,2% %time:~6,2%
+
+python -m train --dnn_type UCAGAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --batch_size 8 --n_ResGroup 2 --n_RCAB 3 --n_channel 16 --epoch 500 --start_lr 1e-3 --d_start_lr 1e-6 --lr_decay_factor 0.5 --d_lr_decay_factor 0.5 --train_generator_times 3 --train_discriminator_times 1 --alpha 0.1 --beta 0.5 --gamma 0.2 --mae_loss 0 --mse_loss 1 --unrolling_iter 2
