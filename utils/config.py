@@ -51,7 +51,7 @@ def parse_args():
                         help='The directory of the data')
     parser.add_argument('--dataset', type=str, default='FixedCell',
                         help='FixedCell or FairSIM')
-    parser.add_argument('--dnn_type', type=str, default='CAGAN',
+    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
                         choices=['CAGAN',
                                  'SRGAN',
                                  'UCAGAN',
@@ -65,23 +65,23 @@ def parse_args():
                         choices=range(2))
     parser.add_argument("--mae_loss", type=float, default=1)
     parser.add_argument("--mse_loss", type=float, default=0)
-    parser.add_argument("--ssim_loss", type=float, default=0)
-    parser.add_argument("--alpha", type=float, default=0) # gan_loss
+    parser.add_argument("--ssim_loss", type=float, default=0.5)
+    parser.add_argument("--alpha", type=float, default=0.1) # gan_loss
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
     parser.add_argument("--gamma", type=float, default=0.2)  # weight_unrolling gamma
     parser.add_argument("--unrolling_iter", type=int, default=2,
                         choices=range(2))
 
     # Generator Setup
-    parser.add_argument("--start_lr", type=float, default=1e-4)
+    parser.add_argument("--start_lr", type=float, default=1e-3)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_generator_times", type=int, default=1)
+    parser.add_argument("--train_generator_times", type=int, default=3)
     parser.add_argument("--opt", type=str, default="adam")
 
     # Discriminator Setup
     parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
     parser.add_argument("--d_lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_discriminator_times", type=int, default=0)
+    parser.add_argument("--train_discriminator_times", type=int, default=1)
     parser.add_argument("--d_opt", type=str, default="adam")
 
     default_iterations = 500
@@ -109,8 +109,8 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default='logs',
                         help='Directory name to save training logs')
 
-    parser.add_argument("--n_ResGroup", type=int, default=6)
-    parser.add_argument("--n_RCAB", type=int, default=9)
+    parser.add_argument("--n_ResGroup", type=int, default=2)
+    parser.add_argument("--n_RCAB", type=int, default=3)
     parser.add_argument("--n_channel", type=int, default=16)
 
     parser.add_argument("--n_phases", type=int, default=5)

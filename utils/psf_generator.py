@@ -150,7 +150,7 @@ def cal_psf_3d(otf_path, dim):
         temp = np.zeros_like(curOTF) + 1j * np.zeros_like(curOTF)
         for j in range(Nz):
             temp[:, :, j] = F.fftshift(F.fft2(np.squeeze(curOTF[:, :, j])))
-        PSF = np.abs(F.fftshift(F.fft(temp, axis=2), axes=2))
+        # PSF = np.abs(F.fftshift(F.fft(temp, axis=2), axes=2))
         PSF = PSF / np.sum(PSF)
     # If PSF is saved as a 'mat' file
     elif 'mat' in otf_path:

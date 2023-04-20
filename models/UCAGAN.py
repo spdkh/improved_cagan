@@ -18,39 +18,6 @@ class UCAGAN(CAGAN):
     def __init__(self, args, unrolling_its=1):
         CAGAN.__init__(self, args)
 
-    # # @title Physics-Guided Unrolling gamma = 0.0005
-    # gamma = 0.001
-    # original_input = layers.Input(shape=(test_x.shape[1], test_x.shape[2], 1))
-    # net_input = original_input
-    #
-    # for iteration in range(NUM_ITER):
-    #     x = srcnn(net_input)
-    #
-    #     ## physics-guided
-    #
-    #     x = tf.add(net_input, x)
-    #     print(x.shape)
-    #     y = tf.nn.conv2d(x, kernel_transpose,
-    #                      strides=1,
-    #                      padding='SAME')
-    #     ya = tf.multiply(y, gamma)
-    #     x = tf.add(x, ya)
-    #     F = tf.signal.fft2d(tf.cast(x,
-    #                                 tf.complex64,
-    #                                 name=None),
-    #                         name=None)
-    #     x = tf.multiply(F, 1 / (1 + gamma * K_norm ** 2))
-    #     x = tf.cast(tf.signal.ifft2d(x,
-    #                                  name=None),
-    #                 tf.float32,
-    #                 name=None)
-    #     gamma /= 2
-    #     net_input = x
-    #
-    # # Auto encoder
-    # model_pg = Model(original_input, x)
-    # print(model_pg.summary())
-
     def generator(self, g_input):
         x = rcan(g_input,
                  n_rcab=self.args.n_RCAB,
@@ -59,7 +26,6 @@ class UCAGAN(CAGAN):
         initial_x = x
 
         kernel_T = self.data.psf.transpose(0, 2, 1, 3)
-        # print(kernel_T.shape)
         K_norm = tf.norm(tf.signal.fft3d(self.data.psf))
         print('K norm:', K_norm)
         # plt.imshow(self.data.psf)
