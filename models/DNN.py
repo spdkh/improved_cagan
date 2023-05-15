@@ -2,17 +2,15 @@
     author: SPDKH
     todo: complete
 """
-# -*- coding: utf-8 -*-
 from __future__ import division
 import os
 import re
 from abc import ABC, abstractmethod
-
 import tensorflow as tf
 from tensorflow.keras.models import Model
-
 from data.data import Data
-
+from data.fairsim import FairSIM
+from data.fixed_cell import FixedCell
 
 class DNN(ABC):
     """
@@ -31,11 +29,32 @@ class DNN(ABC):
 
         self.data = Data(self.args)
 
-        self.optimizer = self.args.g_opt
+        self.optimizer = self.args.opt
 
-        data_name = self.args.data_dir.split('/')[-1]
+        # data_name = self.args.data_dir.split('/')[-1]
 
+        print('Init', self.args.dnn_type)
+
+        if "FixedCell" in self.args.data_dir:
+            self.data = FixedCell(self.args)
+        elif "FairSIM" in self.args.data_dir:
+            self.data = FairSIM(self.args)
+        # datasets = {'FixedCell': FixedCell,
+        #             'FairSIM': FairSIM}
+
+        # self.data = datasets[self.args.dataset](self.args)
+        self.scale_factor = int(self.data.output_dim[0] / \
+                                self.data.input_dim[0])
         super().__init__()
+
+    def batch_iterator(self, mode='train'):
+        # how many total data in that mode exists
+        data_size = len(os.listdir(self.data.data_dirs['x' + mode]))
+        if data_size // self.args.batch_size - self.args.batch_size <= self.batch_id[mode]:
+            self.batch_id[mode] = 0
+
+        self.batch_id[mode] += 1
+        return self.batch_id[mode]
 
     @abstractmethod
     def build_model(self):
@@ -58,7 +77,7 @@ class DNN(ABC):
 
     @property
     def model_dir(self):
-        return "{}_{}_{}_{}".format(
+        return "{}_{}_{}".format(
             self.args.dnn_type, self.args.dataset_name,
             self.args.batch_size)
 
@@ -93,7 +112,6 @@ class DNN(ABC):
 
     def load(self, checkpoint_dir):
         """
-        todo: add a function to generate the final checkpoint dir
         todo: test
         source: https://www.tensorflow.org/tutorials/keras/save_and_load
 
@@ -106,7 +124,9 @@ class DNN(ABC):
 
         """
         print(" [*] Reading checkpoints...")
-        checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir, self.model_name)
+        checkpoint_dir = os.path.join(checkpoint_dir,
+                                      self.model_dir,
+                                      self.model_name)
         latest = tf.train.latest_checkpoint(checkpoint_dir)
 
         if checkpoint_dir:

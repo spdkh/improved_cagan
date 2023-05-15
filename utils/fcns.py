@@ -2,16 +2,15 @@
     caGAN project functions
 
 Most codes from https://github.com/carpedm20/DCGAN-tensorflow
-todo: revise
 """
 from __future__ import division
 
-import scipy.misc
-import imageio
-
-import matplotlib.pyplot as plt
 import os
 
+import imageio
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.misc
 import tensorflow as tf
 # import tensorflow.contrib.slim as slim
 #
@@ -25,42 +24,10 @@ from skimage.metrics import mean_squared_error as compare_mse, \
     structural_similarity as compare_ssim
 
 
-
-def load_data(dataset_name):
-    (trX, trY), (teX, teY) = mnist.load_data()
-    trX = trX.reshape((60000, 28, 28, 1))
-    trY = trY.reshape((60000))
-    teX = teX.reshape((10000, 28, 28, 1))
-    teY = teY.reshape((10000))
-
-    trY = np.asarray(trY)
-    teY = np.asarray(teY)
-
-    X = np.concatenate((trX, teX), axis=0)
-    y = np.concatenate((trY, teY), axis=0).astype(np.int)
-
-    seed = 547
-    np.random.seed(seed)
-    np.random.shuffle(X)
-    np.random.seed(seed)
-    np.random.shuffle(y)
-
-    y_vec = np.zeros((len(y), 10), dtype=np.float)
-    for i, label in enumerate(y):
-        y_vec[i, y[i]] = 1.0
-
-    return X / 255., y_vec
-
-
 def check_folder(log_dir):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     return log_dir
-
-
-def show_all_variables():
-    model_vars = tf.trainable_variables()
-    slim.model_analyzer.analyze_vars(model_vars, print_info=True)
 
 
 def get_image(image_path, input_height, input_width, resize_height=64, resize_width=64, crop=True, grayscale=False):
@@ -175,6 +142,7 @@ def reorder(img, phases=5, angles=3):
     :param angles:
     :return:
     """
+
     [n_zs, n_x, n_y] = np.shape(img)
     n_z = n_zs // (angles * phases)
     five_d_img = np.reshape(img, (angles, n_z, phases, n_x, n_y))
@@ -192,9 +160,29 @@ def prctile_norm(x_in, min_prc=0, max_prc=100):
     :return: output
     """
     output = (x_in - np.percentile(x_in, min_prc)) / (np.percentile(x_in, max_prc)
-                                           - np.percentile(x_in, min_prc) + 1e-7)
+                                                      - np.percentile(x_in, min_prc) + 1e-7)
     output[output > 1] = 1
     output[output < 0] = 0
+    return output
+
+
+def max_norm(x_in):
+    """
+    :param x_in:
+    :return: output
+    """
+    output = x_in / np.max(x_in)
+    return output
+
+
+def min_max_norm(x_in):
+    """
+    :param x_in:
+    :return: output
+
+    todo: vip
+    """
+    output = x_in
     return output
 
 

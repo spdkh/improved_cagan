@@ -1,9 +1,6 @@
 """
     author: SPDKH
-    todo: complete
 """
-import numpy as np
-
 from tensorflow.keras.layers import Dense, Flatten, Input, add, multiply
 from tensorflow.keras.layers import Conv3D, UpSampling3D, LeakyReLU, Lambda, ReLU
 from utils.common import global_average_pooling3d, conv_block3d
@@ -30,9 +27,13 @@ def srcnn(net_input, scale=2, filters=[9, 1, 5], coeffs=[64, 32]):
     the output tensorflow layer from the architecture
 
     todo: start with imagenet weights
-    todo: check in the beginning if the lengths are not correct,
-            drop from coeffs
     """
+    # net_input = x
+    # x = layers.Conv2D(64, 9, activation="relu", padding="same")(net_input)
+    # x = layers.Conv2D(32, 5, activation="relu", padding="same")(x)
+    #
+    # x = layers.Conv2DTranspose(1, 5, activation="relu", padding="same")(x)
+
     conv = net_input
     for i, ni in enumerate(coeffs):
         conv = Conv3D(ni,
@@ -101,7 +102,6 @@ def conv_block(net_input, channel_size):
 
     Returns
     -------
-    todo: what is this?
     """
     conv = net_input
     for _ in range(2):
