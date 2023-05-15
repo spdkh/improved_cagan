@@ -2,14 +2,10 @@
     author: SPDKH
 """
 import os
-import glob
 import numpy as np
 from data.data import Data
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
 from utils import fcns
 from skimage.measure import block_reduce
-from matplotlib import pyplot as plt
 import tifffile as tiff
 
 from utils.fcns import prctile_norm, fix_path, reorder
@@ -32,12 +28,12 @@ class FairSIM(Data):
                                   self.data_types['y'])
         in_sample_dir = os.path.join(input_dir,
                                      os.listdir(input_dir)[0])
-        self.input_dim = self.load_sample(in_sample_dir, 1)
+        self.input_dim = self.load_sample(in_sample_dir)
         print('input', self.input_dim)
         out_sample_dir = os.path.join(output_dir,
                                       os.listdir(output_dir)[0])
 
-        self.output_dim = self.load_sample(out_sample_dir, 1)
+        self.output_dim = self.load_sample(out_sample_dir)
         print('output', self.output_dim)
 
         save_weights_name = 'FairSIM'

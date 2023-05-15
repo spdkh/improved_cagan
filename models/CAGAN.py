@@ -10,7 +10,6 @@ from models.super_resolution import rcan
 
 import datetime
 import glob
-import os
 
 from tensorflow.keras import backend as K
 
@@ -24,9 +23,6 @@ from skimage.metrics import mean_squared_error as compare_mse, \
     peak_signal_noise_ratio as compare_psnr, \
     structural_similarity as compare_ssim
 from matplotlib import pyplot as plt
-import matplotlib
-
-matplotlib.use('Agg')
 
 
 class CAGAN(GAN):
