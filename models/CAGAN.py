@@ -105,7 +105,7 @@ class CAGAN(GAN):
         )
 
         self.d_loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        # checkpoint_dir = './training_checkpoints'
+        checkpoint_dir = './training_checkpoints'
         # checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         # checkpoint = tf.train.Checkpoint(generator_optimizer=self.args.opt,
         #                                  discriminator_optimizer=self.args.d_opt,
@@ -114,15 +114,15 @@ class CAGAN(GAN):
         # --------------------------------------------------------------------------------
         #                             if exist, load weights
         # --------------------------------------------------------------------------------
-        # if self.args.load_weights:
-        #     if os.path.exists(save_weights_path + 'weights_best.h5'):
-        #         combined.save_weights(save_weights_path + 'weights_best.h5')
-        #         d.save_weights(save_weights_path + 'weights_disc_best.h5')
-        #         print('Loading weights successfully: ' + save_weights_path + 'weights_best.h5')
-        #     elif os.path.exists(save_weights_path + 'weights_latest.h5'):
-        #         combined.save_weights(save_weights_path + 'weights_latest.h5')
-        #         d.save_weights(save_weights_path + 'weights_disc_latest.h5')
-        #         print('Loading weights successfully: ' + save_weights_path + 'weights_latest.h5')
+        if self.args.load_weights:
+            if os.path.exists(self.data.save_weights_path + 'weights_best.h5'):
+                self.gen.load_weights(self.data.save_weights_path + 'weights_best.h5')
+                self.disc.load_weights(self.data.save_weights_path + 'weights_disc_best.h5')
+                print('Loading weights successfully: ' + self.data.save_weights_path + 'weights_best.h5')
+            elif os.path.exists(self.data.save_weights_path + 'weights_latest.h5'):
+                self.gen.load_weights(self.data.save_weights_path + 'weights_latest.h5')
+                self.disc.load_weights(self.data.save_weights_path + 'weights_disc_latest.h5')
+                print('Loading weights successfully: ' + self.data.save_weights_path + 'weights_latest.h5')
 
     def train(self):
         """
@@ -301,12 +301,20 @@ class CAGAN(GAN):
 
         if sample == 0:
             # if best, save weights.best
+            # self.gen.save(os.path.join(self.data.save_weights_path,
+            #                       'gen_latest.h5'))
+            # self.disc.save(os.path.join(self.data.save_weights_path,
+            #                            'disc_latest.h5'))
             self.gen.save_weights(os.path.join(self.data.save_weights_path,
                                   'weights_gen_latest.h5'))
             self.disc.save_weights(os.path.join(self.data.save_weights_path,
                                    'weights_disc_latest.h5'))
 
             if min(validate_nrmse) > np.mean(nrmses):
+                # self.gen.save(os.path.join(self.data.save_weights_path,
+                #                            'gen_best.h5'))
+                # self.disc.save(os.path.join(self.data.save_weights_path,
+                #                             'disc_best.h5'))
                 self.gen.save_weights(os.path.join(self.data.save_weights_path,
                                       'weights_gen_best.h5'))
                 self.disc.save_weights(os.path.join(self.data.save_weights_path,

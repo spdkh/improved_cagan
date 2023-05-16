@@ -46,12 +46,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument("--data_dir", type=str,
-                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped3d_128_3",
                         # default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
     parser.add_argument('--dataset', type=str, default='FixedCell',
                         help='FixedCell or FairSIM')
-    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
+    parser.add_argument('--dnn_type', type=str, default='CAGAN',
                         choices=['CAGAN',
                                  'SRGAN',
                                  'UCAGAN',
@@ -65,7 +65,7 @@ def parse_args():
                         choices=range(2))
     parser.add_argument("--mae_loss", type=float, default=1)
     parser.add_argument("--mse_loss", type=float, default=0)
-    parser.add_argument("--ssim_loss", type=float, default=0.5)
+    parser.add_argument("--ssim_loss", type=float, default=0)
     parser.add_argument("--alpha", type=float, default=0.1) # gan_loss
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
     parser.add_argument("--gamma", type=float, default=0.2)  # weight_unrolling gamma
