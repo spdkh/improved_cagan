@@ -17,6 +17,8 @@ import os
 import visualkeras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Flatten, LeakyReLU, ReLU
+
 import tensorflow as tf
 import numpy as np
 from sewar.full_ref import uqi
@@ -198,6 +200,7 @@ class CAGAN(GAN):
 
             with tf.GradientTape() as disc_tape:
                 disc_real_output = self.disc(gt_d)
+                print(np.shape(fake_input_d))
                 disc_fake_output = self.disc(fake_input_d)
                 disc_loss = self.discriminator_loss(disc_real_output,
                                                     disc_fake_output)
@@ -408,13 +411,12 @@ class CAGAN(GAN):
         #              optimizer=self.args.d_opt,
         #              metrics=['accuracy'])
 
-        # frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
-        # frozen_disc.trainable = False
+        frozen_disc = Model(inputs=disc.inputs, outputs=disc.outputs)
+        frozen_disc.trainable = False
 
-        # tf.keras.utils.plot_model(disc, to_file='discriminator.png',show_shapes=True, dpi=64, rankdir='LR')
-        visualkeras.layered_view(disc, legend=True)  # font is optional!
-        visualkeras.layered_view(disc, to_file='Disc.png')  # write to disk
-        return disc, None
+        tf.keras.utils.plot_model(disc, to_file='Disc.png',show_shapes=True, dpi=64, rankdir='LR')
+        visualkeras.layered_view(disc,  draw_volume=False,legend=True, to_file='Disc2.png')  # write to disk
+        return disc, frozen_disc
 
     def generator(self, g_input):
         self.g_output = rcan(g_input,
@@ -423,9 +425,8 @@ class CAGAN(GAN):
                              channel=self.args.n_channel)
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-        # tf.keras.utils.plot_model(gen, to_file='generator.png', show_shapes=True, dpi=64, rankdir='LR')
-        visualkeras.layered_view(gen, legend=True)  # font is optional!
-        visualkeras.layered_view(gen, to_file='Generator.png')  # write to disk
+        tf.keras.utils.plot_model(gen, to_file='Generator.png', show_shapes=True, dpi=64, rankdir='LR')
+        visualkeras.layered_view(gen,  draw_volume=False,legend=True, to_file='Generator2.png')  # write to disk
         return gen
 
     def generator_loss(self, disc_generated_output):

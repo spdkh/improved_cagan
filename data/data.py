@@ -45,6 +45,10 @@ class Data(ABC):
         self.otf_path = None
         #     check_folder(self.log_path)
 
+        self.input_dim = self.load_sample(self.args.test_dir)
+        print('input', self.input_dim)
+        self.output_dim = [self.input_dim[0]*2, self.input_dim[1]*2, self.input_dim[2], 1]
+
     def load_sample(self, path, show=0):
         """
         convert any type of data to [x, y, z, ch] then return dimension

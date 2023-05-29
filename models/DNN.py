@@ -30,12 +30,8 @@ class DNN(ABC):
         """
         self.model = Model()
         self.args = args
-
         self.data = Data(self.args)
-
         self.optimizer = self.args.opt
-
-        # data_name = self.args.data_dir.split('/')[-1]
 
         print('Init', self.args.dnn_type)
 
@@ -43,19 +39,14 @@ class DNN(ABC):
             self.data = FixedCell(self.args)
         elif "FairSIM" in self.args.data_dir:
             self.data = FairSIM(self.args)
-        # datasets = {'FixedCell': FixedCell,
-        #             'FairSIM': FairSIM}
 
-        # self.data = datasets[self.args.dataset](self.args)
         self.scale_factor = int(self.data.output_dim[0] / \
                                 self.data.input_dim[0])
 
         self.writer = tf.summary.create_file_writer(self.data.log_path)
 
-        # print(params_log)
-        # display(params_log)
-        print(log_generator(vars(self.args)))
-        self.write_log(self.writer, 'params', log_generator(vars(self.args)))
+        for param, val in vars(self.args).items():
+            self.write_log(self.writer, param, str(val), mode='')
 
         super().__init__()
 
@@ -151,7 +142,7 @@ class DNN(ABC):
             print(" [*] Failed to find a checkpoint")
             return False, 0
 
-    def write_log(self, writer, names, logs, batch_no=0):
+    def write_log(self, writer, names, logs, batch_no=0, mode='float'):
         """
         todo: test
         Parameters
@@ -161,20 +152,11 @@ class DNN(ABC):
         batch_no
         """
         with writer.as_default():
-            try:
+            if mode == 'float':
                 tf.summary.scalar(names, logs, step=batch_no)
-            except:
+            else:
                 tf.summary.text(names,
                                 tf.convert_to_tensor(str(logs),
                                                      dtype=tf.string),
                                 step=batch_no)
             writer.flush()
-
-def log_generator(data):
-    data = str(data).split(',')
-
-    params_log = ''
-    for d in data:
-        spacer = (150 - len(d)) * '.'
-        params_log += d + spacer + '\n'
-    return params_log

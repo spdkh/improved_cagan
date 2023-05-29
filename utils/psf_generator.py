@@ -191,9 +191,15 @@ def psf_estimator_3d(psf):
     index_y = max_index[0][0]
     index_x = max_index[1][0]
     index_z = max_index[2][0]
+    print(shape)
+    print(index_y)
+    print(index_x)
+    print(index_z)
+    print(max_index)
     # estimate y sigma
     x = ar(range(shape[0]))
     y = prctile_norm(np.squeeze(psf[:, index_x, index_z]))
+    print(x.shape, y.shape)
     fit_y, cov_y = curve_fit(gaussian_1d, x, y, p0=[1, index_y, 2])
     print('estimated psf sigma_y: ', fit_y[2])
     # estimate x sigma
