@@ -25,7 +25,7 @@ class UCAGAN(CAGAN):
                  channel=self.args.n_channel)
         initial_x = x
 
-        kernel_T = self.data.psf.transpose(0, 2, 1, 3)
+        kernel_T = self.data.psf.transpose(1, 0, 2, 3)
         K_norm = tf.norm(tf.signal.fft3d(self.data.psf))
         print('K norm:', K_norm)
         # plt.imshow(self.data.psf)
@@ -73,16 +73,16 @@ class UCAGAN(CAGAN):
         return gen
 
     def conv3d(self, x, psf):
-        # x = tf.cast(x,
-        #             tf.complex64,
-        #             name=None)
-        # psf = tf.cast(psf,
-        #             tf.complex64,
-        #             name=None)
+        x = tf.cast(x,
+                    tf.complex64,
+                    name=None)
+        psf = tf.cast(psf,
+                    tf.complex64,
+                    name=None)
+        print(psf.shape, x.shape)
         psf = np.expand_dims(psf, axis=0)
 
         print(psf.shape, x.shape)
-        print(psf_estimator_3d(psf).shape)
         if psf.shape[3] > x.shape[3]:
             psf = psf[:, :, :,
                   psf.shape[3] // 2 - (x.shape[3] - 1) // 2:
@@ -90,12 +90,12 @@ class UCAGAN(CAGAN):
                   :]
         print(psf.shape, x.shape)
 
-        # input_fft = tf.signal.fft3d(x)
-        # weights_fft = tf.signal.fft3d(psf)
-        # conv_fft = tf.multiply(input_fft, weights_fft)
-        # layer_output = tf.signal.ifft3d(conv_fft)
-        #
-        # layer_output = tf.cast(layer_output,
-        #             tf.float64,
-        #             name=None)
+        input_fft = tf.signal.fft3d(x)
+        weights_fft = tf.signal.fft3d(psf)
+        conv_fft = tf.multiply(input_fft, weights_fft)
+        layer_output = tf.signal.ifft3d(conv_fft)
+
+        layer_output = tf.cast(layer_output,
+                    tf.float32,
+                    name=None)
         return layer_output

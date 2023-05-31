@@ -159,21 +159,27 @@ class Data(ABC):
 
         return image_batch, gt_batch, wf_batch
 
+    @abstractmethod
+    def load_psf(self):
+        pass
+
     def init_psf(self):
         # --------------------------------------------------------------------------------
         #                             Read OTF and PSF
         # --------------------------------------------------------------------------------
+        raw_psf = self.load_psf()
         # 128*128*11 otf and psf numpy array
-        psf, _ = cal_psf_3d(self.otf_path,
-                            self.input_dim[:-1])
+        psf, _ = cal_psf_3d(raw_psf,
+                            self.output_dim[:-1])
 
-        print(np.shape(psf))
-        return psf
-        sigma_y, sigma_x, sigma_z = psf_estimator_3d(psf)  # Find the most effective region of OTF
-        ksize = int(sigma_y * 4)
-        halfy = self.input_dim[1] // 2
+        print('PSF size before:', np.shape(psf))
+        # return psf
+        # sigma_y, sigma_x, sigma_z = psf_estimator_3d(psf)  # Find the most effective region of OTF
+        ksize = self.output_dim[0] // 2 #int(sigma_y * 4)
+        halfy = np.shape(psf)[0] // 2
+        print(ksize, halfy)
         psf = psf[halfy - ksize:halfy + ksize, halfy - ksize:halfy + ksize, :]
-        print(np.shape(psf))
+        print('PSF size after:', np.shape(psf))
         return np.reshape(psf,
-                          (ksize * 2, 2 * ksize, 11, 1)).astype(np.float32)
+                          (ksize * 2, 2 * ksize, np.shape(psf)[2], 1)).astype(np.float32)
 

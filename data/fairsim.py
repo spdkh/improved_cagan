@@ -4,6 +4,7 @@
 import os
 
 import numpy as np
+from scipy.io import loadmat
 
 from data.data import Data
 from utils import fcns
@@ -47,3 +48,9 @@ class FairSIM(Data):
         self.otf_path = './OTF/splinePSF_128_128_11.mat'
 
         self.psf = self.init_psf()
+
+    def load_psf(self):
+        raw_psf = loadmat(self.otf_path)
+        raw_psf = raw_psf['h']
+        print(np.shape(raw_psf))
+        return raw_psf

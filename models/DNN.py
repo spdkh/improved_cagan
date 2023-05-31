@@ -30,7 +30,7 @@ class DNN(ABC):
         """
         self.model = Model()
         self.args = args
-        self.data = Data(self.args)
+        # self.data = Data(self.args)
         self.optimizer = self.args.opt
 
         print('Init', self.args.dnn_type)
