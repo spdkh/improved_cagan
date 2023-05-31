@@ -156,7 +156,7 @@ class RCAN(DNN):
         self.lr_controller.on_train_begin()
         loss_record = []
 
-        train_names = ['Generator_loss']
+        train_names = ['SR_loss']
 
         for it in range(self.args.epoch):
             # batch_id flag for iteration number including the inner loops

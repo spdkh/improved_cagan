@@ -13,7 +13,12 @@ from models.UCAGAN import UCAGAN
 from models.CGAN import CGAN
 from models.DNN import DNN
 from models.RCAN import RCAN
+from models.URCAN import URCAN
+
 from utils.config import parse_args
+
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
 
 
 def main():
@@ -21,20 +26,29 @@ def main():
         Main Training Function
     """
 
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-
     # parse arguments
     args = parse_args()
     if args is None:
         sys.exit()
     tf.random.set_seed(args.seed)
+
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    # gpu_options = tf.compat.v1.GPUOptions(TF_GPU_ALLOCATOR=cuda_malloc_async, per_process_gpu_memory_fraction=args.gpu_memory_fraction)
+    # tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
+
+
+    config = ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = InteractiveSession(config=config)
+
     # open session
     model_fns = {'CAGAN': CAGAN,
                  'SRGAN': SRGAN,
                  'CGAN': CGAN,
                  'DNN': DNN,
                  'UCAGAN': UCAGAN,
-                 'RCAN': RCAN}
+                 'RCAN': RCAN,
+                 'URCAN': URCAN}
 
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
