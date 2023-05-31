@@ -3,12 +3,12 @@
 """
 from models.CAGAN import CAGAN
 from models.super_resolution import rcan, srcnn
+from utils.psf_generator import psf_estimator_3d
 
 import numpy as np
 from tensorflow.keras.models import Model
 import tensorflow as tf
 import visualkeras
-
 
 class UCAGAN(CAGAN):
     """
@@ -25,7 +25,7 @@ class UCAGAN(CAGAN):
                  channel=self.args.n_channel)
         initial_x = x
 
-        kernel_T = self.data.psf.transpose(0, 2, 1, 3)
+        kernel_T = self.data.psf.transpose(1, 0, 2, 3)
         K_norm = tf.norm(tf.signal.fft3d(self.data.psf))
         print('K norm:', K_norm)
         # plt.imshow(self.data.psf)
@@ -66,22 +66,36 @@ class UCAGAN(CAGAN):
 
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
-        # tf.keras.utils.plot_model(gen, to_file='Unrolled_generator.png', show_shapes=True, dpi=64, rankdir='LR')
+        tf.keras.utils.plot_model(gen, to_file='Unrolled_generator.png', show_shapes=True, dpi=64, rankdir='LR')
 
         # font = ImageFont.truetype("C:\\Windows\\Fonts\\Times New Roman.ttf", 32)  # using comic sans is strictly prohibited!
-        visualkeras.layered_view(gen, legend=True)  # font is optional!
-        visualkeras.layered_view(gen, to_file='Unrolled_generator.png')  # write to disk
+        visualkeras.layered_view(gen,  draw_volume=False,legend=True, to_file='Unrolled_generator2.png')  # write to disk
         return gen
 
     def conv3d(self, x, psf):
+        x = tf.cast(x,
+                    tf.complex64,
+                    name=None)
+        psf = tf.cast(psf,
+                    tf.complex64,
+                    name=None)
+        print(psf.shape, x.shape)
         psf = np.expand_dims(psf, axis=0)
+
+        print(psf.shape, x.shape)
         if psf.shape[3] > x.shape[3]:
             psf = psf[:, :, :,
                   psf.shape[3] // 2 - (x.shape[3] - 1) // 2:
                   psf.shape[3] // 2 + (x.shape[3] - 1) // 2 + 1,
                   :]
+        print(psf.shape, x.shape)
 
-        return tf.nn.conv3d(x,
-                            psf,
-                            strides=[1] * 5,
-                            padding='SAME')
+        input_fft = tf.signal.fft3d(x)
+        weights_fft = tf.signal.fft3d(psf)
+        conv_fft = tf.multiply(input_fft, weights_fft)
+        layer_output = tf.signal.ifft3d(conv_fft)
+
+        layer_output = tf.cast(layer_output,
+                    tf.float32,
+                    name=None)
+        return layer_output
