@@ -37,12 +37,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument("--data_dir", type=str,
-                        # default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
-                        default="D:\\Data\\FairSIM\\cropped3d_128_3",
+                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+                        # default="D:\\Data\\FairSIM\\cropped3d_128_3",
                         help='The directory of the data')
     parser.add_argument('--dataset', type=str, default='FairSIM',
                         help='FixedCell or FairSIM')
-    parser.add_argument('--dnn_type', type=str, default='RCAN',
+    parser.add_argument('--dnn_type', type=str, default='CAGAN',
                         choices=['CAGAN',
                                  'SRGAN',
                                  'UCAGAN',
@@ -111,11 +111,10 @@ def parse_args():
     """
                                     Predict
     """
-    parser.add_argument("--test_dir", type=str, default="D:\\Data\\FairSIM\cropped2d_128\\validation\\raw_data\\OMX_U2OS_Tubulin_525nm_000.tif")
-    parser.add_argument("--folder_test", type=str, default="fairsim")
+    parser.add_argument("--folder_test", type=str, default="fixed_cell")
     parser.add_argument("--gpu_id", type=str, default="0")
     parser.add_argument("--gpu_memory_fraction", type=float, default=0.25)
     parser.add_argument("--model_weights", type=str,
-                        default="D:\\OneDrive - The University of Memphis\\Parisa_Daj\\Codes\\caGAN_git\\trained_models\\2d\\SIM_cropped_0.05\\weights_disc_best.h5")
+                        default="C:/Users/unrolled_caGAN/Desktop/Selected Results/Best UPIGAN/FixedCell_CAGAN_21-04-2023_time1159/weights_gen_best.h5")
 
     return check_args(parser.parse_args())

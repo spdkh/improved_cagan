@@ -59,13 +59,16 @@ def main():
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
 
-    # build graph
-    dnn.build_model()
+    # if 'gan' in args.dnn_type:
+    #     dnn.model = dnn.gen
+
+    # print(np.shape(dnn.model.))
+    dnn.model.built = True
 
     # data = Data(args)
     # dnn = tf.keras.models.load_model(args.model_weights)
-    dnn.model.load_weights(args.model_weights)
-
+    dnn.model.load_weights(args.model_weights, by_name = True, skip_mismatch = True)
+    dnn.build_model()
     output_name = 'output_' + args.dnn_type + '-'
     output_dir = args.result_dir + '\\' + output_name
     output_dir = output_dir + 'SIM'
@@ -73,25 +76,21 @@ def main():
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    im_count = 0
-    while True:
-        batch_id = dnn.batch_iterator('test')
-        if batch_id == 0:
-            # print(b_id, "is zero.")
-            break
-        imgs, _, _ = dnn.data.data_loader('test',
-                                          batch_id,
-                                          dnn.args.batch_size,
-                                          dnn.scale_factor)
+    input_d, _, _ = \
+        dnn.data.data_loader('test',
+                              dnn.batch_iterator('test'),
+                              100,
+                              dnn.scale_factor)
 
-        outputs = dnn.model.predict(imgs)
-        pr = prctile_norm(np.squeeze(outputs))
+    outputs = dnn.gen.predict(input_d)
 
-        outName = os.path.join(output_dir, f"b-{batch_id}_i-{im_count}.tiff")
+    # pr = prctile_norm(np.squeeze(outputs))
 
-        pr = np.transpose(65535 * pr, (2, 0, 1)).astype('uint16')
-        tiff.imwrite(outName, pr, dtype='uint16')
-        im_count += 1
+    for im_count, output_img in enumerate(outputs):
+        outName = os.path.join(output_dir, f"b-{dnn.batch_id['test']}_i-{im_count}.tiff")
+        print(outName)
+        # pr = np.transpose(65535 * pr, (2, 0, 1)).astype('uint16')
+        tiff.imwrite(outName, output_img, dtype='uint16')
 
 
 if __name__ == '__main__':

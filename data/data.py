@@ -45,7 +45,10 @@ class Data(ABC):
         self.otf_path = None
         #     check_folder(self.log_path)
 
-        self.input_dim = self.load_sample(self.args.test_dir)
+        sample_dir = os.listdir(os.path.join(self.args.data_dir, 'training', 'rawdata'))[0]
+        sample_dir = os.path.join(self.args.data_dir, 'training', 'rawdata', sample_dir)
+        print(sample_dir)
+        self.input_dim = self.load_sample(sample_dir)
         print('input', self.input_dim)
         self.output_dim = [self.input_dim[0]*2, self.input_dim[1]*2, self.input_dim[2], 1]
 
@@ -53,7 +56,8 @@ class Data(ABC):
         """
         convert any type of data to [x, y, z, ch] then return dimension
         """
-        img = np.transpose(tiff.imread(path), (1, 2, 0))
+        img = tiff.imread(path)
+        img = np.transpose(img, (1, 2, 0))
         img_size = list(np.shape(img))
         if img_size[-1] % (self.args.n_phases * self.args.n_angles) == 0:
             img_size[-1] = img_size[-1] // (self.args.n_phases * self.args.n_angles)

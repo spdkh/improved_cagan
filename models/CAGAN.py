@@ -64,7 +64,7 @@ class CAGAN(GAN):
         # last fake hp
         gen_loss = self.generator_loss(judge)
 
-        loss_wf = create_psf_loss(self.data.psf)
+        loss_wf = gen_loss #create_psf_loss(self.data.psf)
         # gen_total_loss, gen_gan_loss, gen_l1_loss =\
         # self.generator_loss(judge, fake_hp, self.g_output)
         # disc_loss = discriminator_loss(disc_real_output, disc_generated_output)
