@@ -20,6 +20,8 @@
 Example usage:
     conda activate tf_gpu
     python -m predict_3d --dnn_type RCAN --data_dir D:\Data\FixedCell\PFA_eGFP\cropped2d_128 --n_ResGroup 2 --n_RCAB 10 --n_channel 16 --unrolling_iter 0 --model_weights "C:\Users\unrolled_caGAN\Desktop\mazhar_Unrolled caGAN project\checkpoint\FixedCell_RCAN_17-04-2023_time0257weights_best.h5"
+
+
 """
 import os
 
