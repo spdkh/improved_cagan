@@ -23,13 +23,23 @@ As described in https://openaccess.thecvf.com/content_ECCV_2018/html/Yulun_Zhang
 
 Example usage:
     conda activate tf_gpu
-    python -m train --dnn_type RCAN --epoch 400 --sample_interval 10 --validate_interval 20
+    python -m train --dnn_type RCAN --start_lr 0.001 --lr_decay_factor 0.95 --epoch 400 --sample_interval 10 --validate_interval 20
 
-Experiment 01: Use 3.5 Implementation Details
+Experiment 01: Use 3.5 Implementation Details of the paper
     --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment01 --data_dir D:\Data\FairSIM\cropped3d_128_3
 
 Experiment 03:
     --n_ResGroup 3 --n_RCAB 5 --checkpoint_dir experiment03 --data_dir D:\Data\FixedCell\PFA_eGFP\cropped3d_128_3
+
+Experiment 02: According to II.B The Architecture of Our Model
+    Qiao, C., Chen, X., Zhang, S., Li, D., Guo, Y., Dai, Q., & Li, D. (2021).
+    3D structured illumination microscopy via channel attention generative adversarial network.
+    IEEE Journal of Selected Topics in Quantum Electronics, 27(4), 1-11.
+
+    --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir checkpoint/experiment02 --data_dir D:\Data\FairSIM\cropped3d_128_3
+
+Experiment 04:
+    --n_ResGroup 1 --n_RCAB 16 --checkpoint_dir checkpoint/experiment04 --data_dir D:\Data\FixedCell\PFA_eGFP\cropped3d_128_3
 
 tensorboard --logdir=
 
@@ -47,6 +57,7 @@ from tensorflow.keras.models import Model
 
 from data.fairsim import FairSIM
 from data.fixed_cell import FixedCell
+from models.CAGAN import create_psf_loss
 from models.DNN import DNN
 from models.super_resolution import rcan
 from utils.autoclip_tf import AutoClipper
@@ -73,10 +84,19 @@ class RCAN(DNN):
         self.lr_controller = None
 
         # self.loss_object = loss_mse_ssim_3d
-        self.loss_object = tf.keras.losses.MeanAbsoluteError()
+        if self.args.mae_loss == 1:
+            self.loss_object = tf.keras.losses.MeanAbsoluteError()
+        elif self.args.mse_loss == 1:
+            self.loss_object = tf.keras.losses.MeanSquaredError()
+        else:
+            sys.exit("mae_loss or mse_loss is needed.")
+        self.loss_wf = None
         self.batch_id = {'train': 0, 'val': 0, 'test': 0}
 
     def build_model(self):
+        if self.args.beta>0:
+            self.loss_wf = create_psf_loss(self.data.psf)
+
         sys.setrecursionlimit(10 ** 4)
         output = rcan(
             self.input, scale=2,
@@ -98,8 +118,13 @@ class RCAN(DNN):
         else:
             opt = self.args.opt
 
-        self.model.compile(loss=self.loss_object,
-                           optimizer=opt)
+        if self.args.beta>0:
+            self.model.compile(loss=[self.loss_object, self.loss_wf],
+                               optimizer=opt,
+                               loss_weights=[1, self.args.beta])
+        else:
+            self.model.compile(loss=self.loss_object,
+                               optimizer=opt)
 
         self.lr_controller = ReduceLROnPlateau(
             model=self.model,
