@@ -159,9 +159,9 @@ class Data(ABC):
 
         return image_batch, gt_batch, wf_batch
 
-    @abstractmethod
-    def load_psf(self):
-        pass
+    # @abstractmethod
+    # def load_psf(self):
+    #     pass
 
     def init_psf(self):
         # --------------------------------------------------------------------------------
