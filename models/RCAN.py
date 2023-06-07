@@ -104,9 +104,9 @@ class RCAN(DNN):
             n_res_group=self.args.n_ResGroup,
             n_rcab=self.args.n_RCAB)
         # print(output)
-        self.model = Model(inputs=self.input, outputs=output)
+        self.gen = Model(inputs=self.input, outputs=output)
 
-        # for layer in self.model.layers:
+        # for layer in self.gen.layers:
         #     print(layer.output_shape)
         # print(self.output)
 
@@ -119,15 +119,15 @@ class RCAN(DNN):
             opt = self.args.opt
 
         if self.args.beta>0:
-            self.model.compile(loss=[self.loss_object, self.loss_wf],
+            self.gen.compile(loss=[self.loss_object, self.loss_wf],
                                optimizer=opt,
                                loss_weights=[1, self.args.beta])
         else:
-            self.model.compile(loss=self.loss_object,
+            self.gen.compile(loss=self.loss_object,
                                optimizer=opt)
 
         self.lr_controller = ReduceLROnPlateau(
-            model=self.model,
+            model=self.gen,
             factor=self.args.lr_decay_factor,
             patience=3,
             mode="min",
@@ -138,13 +138,13 @@ class RCAN(DNN):
         )
 
         if os.path.exists(self.data.save_weights_path + "weights_best.h5"):
-            self.model.load_weights(self.data.save_weights_path + "weights_best.h5")
+            self.gen.load_weights(self.data.save_weights_path + "weights_best.h5")
             print(
                 "Loading weights successfully: "
                 + self.data.save_weights_path + "weights_best.h5"
             )
         elif os.path.exists(self.data.save_weights_path + "weights_latest.h5"):
-            self.model.load_weights(self.data.save_weights_path + "weights_latest.h5")
+            self.gen.load_weights(self.data.save_weights_path + "weights_latest.h5")
             print(
                 "Loading weights successfully: "
                 + self.data.save_weights_path
@@ -174,7 +174,7 @@ class RCAN(DNN):
                     self.scale_factor
                 )
 
-                loss = self.model.train_on_batch(input_g, gt_g)
+                loss = self.gen.train_on_batch(input_g, gt_g)
                 temp_loss.append(loss)
             loss_record.append(np.mean(temp_loss))
 
@@ -213,7 +213,7 @@ class RCAN(DNN):
                                                        self.args.batch_size,
                                                        self.scale_factor)
 
-        outputs = self.model.predict(imgs)
+        outputs = self.gen.predict(imgs)
         for output, img_gt in zip(outputs, imgs_gt):
             output = np.reshape(output,
                                 self.data.output_dim[:-1])
@@ -233,11 +233,11 @@ class RCAN(DNN):
 
         if sample == 0:
             # if best, save weights.best
-            self.model.save_weights(self.data.save_weights_path +
+            self.gen.save_weights(self.data.save_weights_path +
                                     'weights_latest.h5')
 
             if min(validate_nrmse) > np.mean(nrmses):
-                self.model.save_weights(self.data.save_weights_path +
+                self.gen.save_weights(self.data.save_weights_path +
                                         'weights_best.h5')
 
             validate_nrmse.append(np.mean(nrmses))

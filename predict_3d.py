@@ -67,8 +67,10 @@ def main():
 
     # data = Data(args)
     # dnn = tf.keras.models.load_model(args.model_weights)
-    dnn.model.load_weights(args.model_weights, by_name = True, skip_mismatch = True)
+
     dnn.build_model()
+    dnn.gen.load_weights(args.model_weights, by_name = True, skip_mismatch = True)
+
     output_name = 'output_' + args.dnn_type + '-'
     output_dir = args.result_dir + '\\' + output_name
     output_dir = output_dir + 'SIM'
