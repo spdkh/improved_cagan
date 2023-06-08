@@ -22,6 +22,7 @@ Example usage:
     python -m predict_3d --dnn_type RCAN --data_dir D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128 --n_ResGroup 2 --n_RCAB 10 --n_channel 16 --unrolling_iter 0 --model_weights "C:\\Users\\unrolled_caGAN\\Desktop\\mazhar_Unrolled caGAN project\\checkpoint\\FixedCell_RCAN_17-04-2023_time0257weights_best.h5"
 
 """
+import datetime
 import os
 
 import numpy as np
@@ -69,20 +70,20 @@ def main():
     # dnn = tf.keras.models.load_model(args.model_weights)
 
     dnn.build_model()
-    dnn.gen.load_weights(args.model_weights, by_name = True, skip_mismatch = True)
+    dnn.gen.load_weights(args.model_weights, by_name=True, skip_mismatch=True)
 
     output_name = 'output_' + args.dnn_type + '-'
     output_dir = args.result_dir + '\\' + output_name
-    output_dir = output_dir + 'SIM'
+    output_dir = output_dir + 'SIM_' + datetime.datetime.now().strftime("%d-%m-%Y_%H-%M")
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     input_d, _, _ = \
         dnn.data.data_loader('test',
-                              dnn.batch_iterator('test'),
-                              100,
-                              dnn.scale_factor)
+                             dnn.batch_iterator('test'),
+                             100,
+                             dnn.scale_factor)
 
     outputs = dnn.gen.predict(input_d)
 
@@ -92,7 +93,7 @@ def main():
         outName = os.path.join(output_dir, f"b-{dnn.batch_id['test']}_i-{im_count}.tiff")
         print(outName)
         # pr = np.transpose(65535 * pr, (2, 0, 1)).astype('uint16')
-        tiff.imwrite(outName, output_img, dtype='uint16')
+        tiff.imwrite(outName, output_img)  # dtype='uint16'
 
 
 if __name__ == '__main__':
