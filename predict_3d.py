@@ -22,21 +22,12 @@ Example usage:
     python -m predict_3d --dnn_type RCAN --data_dir D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128 --n_ResGroup 2 --n_RCAB 10 --n_channel 16 --unrolling_iter 0 --model_weights "C:\\Users\\unrolled_caGAN\\Desktop\\mazhar_Unrolled caGAN project\\checkpoint\\FixedCell_RCAN_17-04-2023_time0257weights_best.h5"
 
 """
-import os
+import datetime
 
-import numpy as np
-import tensorflow as tf
-import tifffile as tiff
-
-from models.CAGAN import CAGAN
-from models.CGAN import CGAN
-from models.DNN import DNN
 from models.RCAN import RCAN
-from models.SRGAN import SRGAN
-from models.UCAGAN import UCAGAN
-from models.URCAN import URCAN
+
 from utils.config import parse_args
-from utils.fcns import prctile_norm
+from utils.fcns import *
 
 
 def main():
@@ -48,50 +39,87 @@ def main():
     args.batch_size = 1
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    model_fns = {'CAGAN': CAGAN,
-                 'SRGAN': SRGAN,
-                 'CGAN': CGAN,
-                 'DNN': DNN,
-                 'UCAGAN': UCAGAN,
-                 'RCAN': RCAN,
-                 'URCAN': URCAN}
-
     # declare instance for GAN
-    dnn = model_fns[args.dnn_type](args)
-
-    # if 'gan' in args.dnn_type:
-    #     dnn.model = dnn.gen
-
-    # print(np.shape(dnn.model.))
-    dnn.model.built = True
-
-    # data = Data(args)
-    # dnn = tf.keras.models.load_model(args.model_weights)
-    dnn.model.load_weights(args.model_weights, by_name = True, skip_mismatch = True)
+    dnn = RCAN(args)
     dnn.build_model()
-    output_name = 'output_' + args.dnn_type + '-'
-    output_dir = args.result_dir + '\\' + output_name
-    output_dir = output_dir + 'SIM'
+    # dnn.model.built = True
 
+    dnn.model.load_weights(args.model_weights, by_name=True, skip_mismatch = True)
+    dnn.build_model()
+
+    output_folder = '_'.join([args.dataset,
+                           datetime.datetime.now().strftime("%d-%m-%Y_time%H%M")])
+    results_dir = '/'.join(args.model_weights.split('/')[:-1])
+    output_dir = os.path.join(results_dir, 'test_results')
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    input_d, _, _ = \
-        dnn.data.data_loader('test',
-                              dnn.batch_iterator('test'),
-                              100,
+    output_dir = os.path.join(output_dir, output_folder)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    # -------------------------------------------------------------------
+    #                       about Tensor Board
+    # -------------------------------------------------------------------
+
+    val_names = ['val_MSE',
+                 'val_SSIM',
+                 'val_PSNR',
+                 'val_NRMSE',
+                 'val_UQI']
+    mses, nrmses, psnrs, ssims, uqis = [], [], [], [], []
+    imgs, imgs_gt, _ = \
+        dnn.data.data_loader('test', 0,
+                              len(os.listdir(dnn.data.data_dirs['xtest'])),
                               dnn.scale_factor)
+    outputs = dnn.model.predict(imgs)
+    patch_y, patch_x, patch_z, _ = dnn.data.input_dim
+    for im_count, (img, output, img_gt) in enumerate(zip(imgs, outputs, imgs_gt)):
+        output = prctile_norm(output)
+        img_gt = prctile_norm(img_gt)
+        img = prctile_norm(img)
+        output_proj = np.max(output, 2)
+        gt_proj = np.max(np.reshape(img_gt,
+                                    dnn.data.output_dim[:-1]),
+                         2)
+        metrics = \
+            img_comp(gt_proj,
+                          output_proj,
+                          mses,
+                          nrmses,
+                          psnrs,
+                          ssims,
+                          uqis)
+        outName = os.path.join(output_dir, f"b-{dnn.batch_id['test']}_{im_count}.jpg")
 
-    outputs = dnn.gen.predict(input_d)
+        writer = tf.summary.create_file_writer(output_dir)
 
-    # pr = prctile_norm(np.squeeze(outputs))
+        for val_name, metric in zip(val_names, metrics):
+            dnn.write_log(writer, val_name, str(metric), mode=0)
 
-    for im_count, output_img in enumerate(outputs):
-        outName = os.path.join(output_dir, f"b-{dnn.batch_id['test']}_i-{im_count}.tiff")
-        print(outName)
-        # pr = np.transpose(65535 * pr, (2, 0, 1)).astype('uint16')
-        tiff.imwrite(outName, output_img, dtype='uint16')
+        plt.figure(figsize=(22, 6))
+        # figures equal to the number of z patches in columns
+        for j in range(patch_z):
+            output_results = {'Raw Input': img[:, :, j, 0],
+                              'Super Resolution Output': output[:, :, j, 0],
+                              'Ground Truth': img_gt[:, :, j, 0]}
 
+            plt.title('Z = ' + str(j))
+            for i, (label, img) in enumerate(output_results.items()):
+                # first row: input image average of angles and phases
+                # second row: resulting output
+                # third row: ground truth
+                plt.subplot(3, patch_z, j + patch_z * i + 1)
+                plt.ylabel(label)
+                plt.imshow(img, cmap=plt.get_cmap('hot'))
+
+                plt.gca().axes.yaxis.set_ticklabels([])
+                plt.gca().axes.xaxis.set_ticklabels([])
+                plt.gca().axes.yaxis.set_ticks([])
+                plt.gca().axes.xaxis.set_ticks([])
+                plt.colorbar()
+
+        plt.savefig(outName)  # Save sample results
+        plt.close("all")  # Close figures to avoid memory leak
 
 if __name__ == '__main__':
     main()

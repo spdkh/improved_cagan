@@ -55,6 +55,7 @@ class CAGAN(GAN):
         self.disc, self.frozen_d = self.discriminator()
 
         self.gen = self.generator(self.g_input)
+        # print('\nGenerator Sum:')
         # print(self.gen.summary())
 
         fake_hp = self.gen(inputs=self.g_input)
@@ -88,7 +89,6 @@ class CAGAN(GAN):
             verbose=1,
         )
 
-        print('debugging:', self.args.alpha, self.args.beta)
         self.gen.compile(loss=[self.loss_mse_ssim_3d, gen_loss, loss_wf],
                          optimizer=opt,
                          loss_weights=[1,
@@ -200,7 +200,6 @@ class CAGAN(GAN):
 
             with tf.GradientTape() as disc_tape:
                 disc_real_output = self.disc(gt_d)
-                print(np.shape(fake_input_d))
                 disc_fake_output = self.disc(fake_input_d)
                 disc_loss = self.discriminator_loss(disc_real_output,
                                                     disc_fake_output)
@@ -255,6 +254,7 @@ class CAGAN(GAN):
                      'val_UQI']
 
         patch_y, patch_x, patch_z, _ = self.data.input_dim
+
         validate_path = glob.glob(self.data.data_dirs['val'] + '*')
         validate_path.sort()
         # if sample == 1:
@@ -333,7 +333,6 @@ class CAGAN(GAN):
             self.write_log(self.writer, val_names[2], np.mean(psnrs), epoch)
             self.write_log(self.writer, val_names[3], np.mean(nrmses), epoch)
             self.write_log(self.writer, val_names[4], np.mean(uqis), epoch)
-
 
         else:
             plt.figure(figsize=(22, 6))

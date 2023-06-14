@@ -103,12 +103,7 @@ class RCAN(DNN):
             channel=self.args.n_channel,
             n_res_group=self.args.n_ResGroup,
             n_rcab=self.args.n_RCAB)
-        # print(output)
         self.model = Model(inputs=self.input, outputs=output)
-
-        # for layer in self.model.layers:
-        #     print(layer.output_shape)
-        # print(self.output)
 
         if self.args.opt == "adam":
             opt = tf.keras.optimizers.Adam(

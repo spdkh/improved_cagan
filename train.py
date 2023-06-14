@@ -75,10 +75,6 @@ def main():
     # launch the graph in a session
     dnn.train()
     print(" [*] Training finished!")
-    #
-    # # visualize learned generator
-    # dnn.visualize_results(args.epoch-1)
-    # print(" [*] Validation finished!")
 
 
 if __name__ == '__main__':

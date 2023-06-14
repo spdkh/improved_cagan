@@ -32,7 +32,7 @@ class Data(ABC):
         self.save_weights_path = os.path.join(self.args.checkpoint_dir,
                                               chkpnt_folder_name)
 
-        print(self.save_weights_path)
+        # print('Saving weights to:', self.save_weights_path)
         check_folder(self.save_weights_path)
 
         self.sample_path = os.path.join(self.save_weights_path,
@@ -45,12 +45,12 @@ class Data(ABC):
         self.otf_path = None
         #     check_folder(self.log_path)
 
-        sample_dir = os.listdir(os.path.join(self.args.data_dir, 'training', 'rawdata'))[0]
-        sample_dir = os.path.join(self.args.data_dir, 'training', 'rawdata', sample_dir)
-        print(sample_dir)
+        subdir = os.listdir(self.args.data_dir)[0]
+        sample_dir = os.listdir(os.path.join(self.args.data_dir, subdir, 'rawdata'))[0]
+        sample_dir = os.path.join(self.args.data_dir, subdir, 'rawdata', sample_dir)
         self.input_dim = self.load_sample(sample_dir)
-        print('input', self.input_dim)
-        self.output_dim = [self.input_dim[0]*2, self.input_dim[1]*2, self.input_dim[2], 1]
+        sample_dir = os.path.join(self.args.data_dir, subdir, 'gt', sample_dir)
+        self.output_dim = self.load_sample(sample_dir)
 
     def load_sample(self, path, show=0):
         """
@@ -125,6 +125,7 @@ class Data(ABC):
         image_batch = np.array(image_batch)
         gt_batch = np.array(gt_batch)
 
+        print('Image batch size:', image_batch.shape)
         nslice = image_batch.shape[1]
         image_batch = np.reshape(image_batch,
                                  (batch_size,

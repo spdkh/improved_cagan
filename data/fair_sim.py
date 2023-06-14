@@ -34,11 +34,11 @@ class FairSIM(FixedCell):
         in_sample_dir = os.path.join(input_dir,
                                      os.listdir(input_dir)[0])
         self.input_dim = self.load_sample(in_sample_dir)
-        print('input', self.input_dim)
+        print('Input image size', self.input_dim)
         self.output_dim = [self.input_dim[0] * self.args.scale_factor,
                            self.input_dim[1] * self.args.scale_factor,
                            self.input_dim[2], 1]
-        print('output', self.output_dim)
+        print('Output image size', self.output_dim)
 
         save_weights_name = 'SIM_Fair'
 
@@ -63,4 +63,3 @@ class FairSIM(FixedCell):
                 self.data_dirs[data_type + data_group] = \
                     os.path.join(self.data_dirs[data_group],
                                  self.data_types[data_type])
-        print(self.data_dirs)

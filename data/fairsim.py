@@ -29,12 +29,12 @@ class FairSIM(Data):
         in_sample_dir = os.path.join(input_dir,
                                      os.listdir(input_dir)[0])
         self.input_dim = self.load_sample(in_sample_dir)
-        print('input', self.input_dim)
+        print('Input image size', self.input_dim)
         out_sample_dir = os.path.join(output_dir,
                                       os.listdir(output_dir)[0])
 
         self.output_dim = self.load_sample(out_sample_dir)
-        print('output', self.output_dim)
+        print('Output image size', self.input_dim)
 
         for data_group in self.data_groups.keys():
             self.data_dirs[data_group] = os.path.join(self.args.data_dir,
