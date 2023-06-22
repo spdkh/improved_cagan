@@ -6,6 +6,7 @@ import numpy as np
 import tifffile as tiff
 from matplotlib import pyplot as plt
 from skimage.measure import block_reduce
+from scipy.io import loadmat
 
 from utils.psf_generator import Parameters3D, cal_psf_3d, psf_estimator_3d
 
@@ -45,8 +46,10 @@ class Data(ABC):
         self.otf_path = None
         #     check_folder(self.log_path)
 
-        sample_dir = os.listdir(os.path.join(self.args.data_dir, 'training', 'rawdata'))[0]
-        sample_dir = os.path.join(self.args.data_dir, 'training', 'rawdata', sample_dir)
+        folder_name1 = os.listdir(self.args.data_dir)[0]
+        folder_name2 = os.listdir(os.path.join(self.args.data_dir, folder_name1))[0]
+        sample_dir = os.listdir(os.path.join(self.args.data_dir, folder_name1, folder_name2))[0]
+        sample_dir = os.path.join(self.args.data_dir, folder_name1, folder_name2, sample_dir)
         print(sample_dir)
         self.input_dim = self.load_sample(sample_dir)
         print('input', self.input_dim)
@@ -187,3 +190,9 @@ class Data(ABC):
         return np.reshape(psf,
                           (ksize * 2, 2 * ksize, np.shape(psf)[2], 1)).astype(np.float32)
 
+    def load_psf(self):
+        raw_psf = loadmat(self.otf_path)
+        raw_psf = np.expand_dims(raw_psf['h'], axis=-1)
+        raw_psf = np.expand_dims(raw_psf, axis=-1)
+        print(np.shape(raw_psf))
+        return raw_psf

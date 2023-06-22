@@ -25,7 +25,9 @@ class UCAGAN(CAGAN):
                  channel=self.args.n_channel)
         initial_x = x
 
-        kernel_T = self.data.psf.transpose(1, 0, 2, 3)
+        self.data.psf = self.data.load_psf()
+        kernel_T = self.data.psf.transpose(1, 0, 2, 3, 4)
+        print(kernel_T.shape)
         K_norm = tf.norm(tf.signal.fft3d(self.data.psf))
         print('K norm:', K_norm)
         # plt.imshow(self.data.psf)
@@ -47,7 +49,11 @@ class UCAGAN(CAGAN):
             # x = x[:, :, :, :, 0]
             x = tf.add(initial_x, x)
 
-            y = self.conv3d(initial_x, kernel_T)
+            print(initial_x.shape)
+            y = tf.nn.conv3d(initial_x, kernel_T,
+                             strides=[1]*5,
+                             padding='SAME')
+            print(y.shape)
             ya = tf.multiply(y, gamma)
             x = tf.add(x, ya)
             F = tf.signal.fft3d(tf.cast(x,

@@ -60,8 +60,8 @@ def main():
     # declare instance for GAN
     dnn = model_fns[args.dnn_type](args)
 
-    # if 'gan' in args.dnn_type:
-    #     dnn.model = dnn.gen
+    # if 'GAN' in args.dnn_type:
+    #     dnn.model = tf.keras.models.clone_model(dnn.gen)
 
     # print(np.shape(dnn.model.))
     dnn.model.built = True

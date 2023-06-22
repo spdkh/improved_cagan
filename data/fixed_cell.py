@@ -44,6 +44,6 @@ class FixedCell(Data):
                                  self.data_types[data_type])
         print(self.data_dirs)
 
-        self.otf_path = './OTF/fixed_cell_otf.tif'
+        # self.otf_path = './OTF/fixed_cell_otf.tif'
+        self.otf_path = './OTF/splinePSF_128_128_11.mat'
         # self.psf = self.init_psf()
-

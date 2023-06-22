@@ -37,12 +37,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument("--data_dir", type=str,
-                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
-                        # default="D:\\Data\\FairSIM\\cropped3d_128_3",
+                        # default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
+                        default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
     parser.add_argument('--dataset', type=str, default='FairSIM',
                         help='FixedCell or FairSIM')
-    parser.add_argument('--dnn_type', type=str, default='CAGAN',
+    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
                         choices=['CAGAN',
                                  'SRGAN',
                                  'UCAGAN',
@@ -52,17 +52,16 @@ def parse_args():
                                  'RCAN',
                                  'URCAN'],
                         help='The type of GAN')
-
     parser.add_argument("--load_weights", type=int, default=0,
                         choices=range(2))
     parser.add_argument("--mae_loss", type=float, default=1)
     parser.add_argument("--mse_loss", type=float, default=0)
     parser.add_argument("--ssim_loss", type=float, default=0)
-    parser.add_argument("--alpha", type=float, default=0.25) # gan_loss
+    parser.add_argument("--alpha", type=float, default=0.25)  # gan_loss
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
-    parser.add_argument("--gamma", type=float, default=0.1)  # weight_unrolling gamma
+    parser.add_argument("--gamma", type=float, default=-.5)  # weight_unrolling gamma
     parser.add_argument("--unrolling_iter", type=int, default=2,
-                        choices=range(5))
+                        choices=range(6))
 
     # Generator Setup
     parser.add_argument("--start_lr", type=float, default=1e-4)
@@ -73,7 +72,7 @@ def parse_args():
     # Discriminator Setup
     parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
     parser.add_argument("--d_lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_discriminator_times", type=int, default=1)
+    parser.add_argument("--train_discriminator_times", type=int, default=0)
     parser.add_argument("--d_opt", type=str, default="adam")
 
     default_iterations = 5000
