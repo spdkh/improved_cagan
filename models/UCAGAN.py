@@ -19,17 +19,22 @@ class UCAGAN(CAGAN):
         CAGAN.__init__(self, args)
 
     def generator(self, g_input):
-        x = rcan(g_input,
+        y = rcan(g_input,
                  n_rcab=self.args.n_RCAB,
                  n_res_group=self.args.n_ResGroup,
                  channel=self.args.n_channel)
-        initial_x = x
 
         self.data.psf = self.data.load_psf()
-        kernel_T = self.data.psf.transpose(1, 0, 2, 3, 4)
-        print(kernel_T.shape)
-        K_norm = tf.norm(tf.signal.fft3d(self.data.psf))
-        print('K norm:', K_norm)
+        kernel_T = self.data.psf.transpose(0, 2, 1, 3, 4)
+        # print(kernel_T.shape)
+
+        x_i = y
+        # x_i = tf.nn.conv3d(y, kernel_T,
+        #                  strides=[1] * 5,
+        #                  padding='SAME')
+
+        K_norm = tf.norm(tf.signal.fftshift(tf.signal.fft3d(self.data.psf)))
+        # print('K norm:', K_norm)
         # plt.imshow(self.data.psf)
         # plt.colorbar()
         # kernel_T = self.data.psf[:, :, :]
@@ -42,33 +47,37 @@ class UCAGAN(CAGAN):
         gamma = self.args.gamma
 
         for iteration in range(self.args.unrolling_iter):
-            x = rcan(x, scale=1,
+            output = rcan(x_i, scale=1,
                      n_rcab=self.args.n_RCAB,
                      n_res_group=self.args.n_ResGroup,
                      channel=self.args.n_channel)
             # x = x[:, :, :, :, 0]
-            x = tf.add(initial_x, x)
+            if gamma >= 0:
+                # print(x_i.shape)
+                output_2 = self.conv3d(y, kernel_T)
 
-            print(initial_x.shape)
-            y = tf.nn.conv3d(initial_x, kernel_T,
-                             strides=[1]*5,
-                             padding='SAME')
-            print(y.shape)
-            ya = tf.multiply(y, gamma)
-            x = tf.add(x, ya)
-            F = tf.signal.fft3d(tf.cast(x,
+                output_2 = tf.multiply(output_2, gamma)
+
+                output = tf.add(output, output_2)
+
+            output = tf.add(x_i, output)
+
+            output = tf.signal.fftshift(tf.signal.fft3d(tf.cast(output,
                                         tf.complex64,
                                         name=None),
-                                name=None)
-            x = tf.multiply(F, 1 / (1 + gamma * K_norm ** 2))
-            x = tf.cast(tf.signal.ifft3d(x,
-                                         name=None),
+                                name=None))
+
+            if gamma >= 0:
+                output = tf.multiply(output,
+                                     1 / (1 + gamma * K_norm ** 2))
+            x_i = tf.cast(tf.signal.fftshift(tf.signal.ifft3d(output,
+                                         name=None)),
                         tf.float32,
                         name=None)
             # x = np.expand_dims(x, axis=-1)
             gamma /= 2
 
-        self.g_output = x
+        self.g_output = x_i
 
         gen = Model(inputs=self.g_input,
                     outputs=self.g_output)
@@ -79,29 +88,32 @@ class UCAGAN(CAGAN):
         return gen
 
     def conv3d(self, x, psf):
-        x = tf.cast(x,
-                    tf.complex64,
-                    name=None)
-        psf = tf.cast(psf,
-                    tf.complex64,
-                    name=None)
-        print(psf.shape, x.shape)
-        psf = np.expand_dims(psf, axis=0)
-
-        print(psf.shape, x.shape)
+        # psf = np.expand_dims(psf, axis=0)
         if psf.shape[3] > x.shape[3]:
             psf = psf[:, :, :,
                   psf.shape[3] // 2 - (x.shape[3] - 1) // 2:
                   psf.shape[3] // 2 + (x.shape[3] - 1) // 2 + 1,
                   :]
         print(psf.shape, x.shape)
+        return tf.nn.conv3d(x,
+                            psf,
+                            strides=[1] * 5,
+                            padding='SAME')
 
-        input_fft = tf.signal.fft3d(x)
-        weights_fft = tf.signal.fft3d(psf)
-        conv_fft = tf.multiply(input_fft, weights_fft)
-        layer_output = tf.signal.ifft3d(conv_fft)
-
-        layer_output = tf.cast(layer_output,
-                    tf.float32,
-                    name=None)
-        return layer_output
+            # print(psf.shape, x.shape)
+            # if psf.shape[3] > x.shape[3]:
+            #     psf = psf[:, :, :,
+            #           psf.shape[3] // 2 - (x.shape[3] - 1) // 2:
+            #           psf.shape[3] // 2 + (x.shape[3] - 1) // 2 + 1,
+            #           :]
+            # print(psf.shape, x.shape)
+            #
+            # input_fft = tf.signal.fft3d(x)
+            # weights_fft = tf.signal.fft3d(psf)
+            # conv_fft = tf.multiply(input_fft, weights_fft)
+            # layer_output = tf.signal.ifft3d(conv_fft)
+            #
+            # layer_output = tf.cast(layer_output,
+            #             tf.float32,
+            #             name=None)
+            # return layer_output

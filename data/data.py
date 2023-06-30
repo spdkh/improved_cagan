@@ -192,7 +192,7 @@ class Data(ABC):
 
     def load_psf(self):
         raw_psf = loadmat(self.otf_path)
-        raw_psf = np.expand_dims(raw_psf['h'], axis=-1)
+        raw_psf = np.expand_dims(raw_psf['h'], axis=0)
         raw_psf = np.expand_dims(raw_psf, axis=-1)
-        print(np.shape(raw_psf))
+        # print(np.shape(raw_psf))
         return raw_psf

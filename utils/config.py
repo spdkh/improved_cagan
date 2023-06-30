@@ -59,20 +59,20 @@ def parse_args():
     parser.add_argument("--ssim_loss", type=float, default=0)
     parser.add_argument("--alpha", type=float, default=0.25)  # gan_loss
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
-    parser.add_argument("--gamma", type=float, default=-.5)  # weight_unrolling gamma
+    parser.add_argument("--gamma", type=float, default=0.15)  # weight_unrolling gamma
     parser.add_argument("--unrolling_iter", type=int, default=2,
                         choices=range(6))
 
     # Generator Setup
     parser.add_argument("--start_lr", type=float, default=1e-4)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_generator_times", type=int, default=10)
+    parser.add_argument("--train_generator_times", type=int, default=5)
     parser.add_argument("--opt", type=str, default="adam")
 
     # Discriminator Setup
     parser.add_argument("--d_start_lr", type=float, default=1e-6)  # 2e-5
     parser.add_argument("--d_lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_discriminator_times", type=int, default=0)
+    parser.add_argument("--train_discriminator_times", type=int, default=1)
     parser.add_argument("--d_opt", type=str, default="adam")
 
     default_iterations = 5000
