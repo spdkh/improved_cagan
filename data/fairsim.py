@@ -13,8 +13,8 @@ class FairSIM(Data):
     def __init__(self, args):
         Data.__init__(self, args)
         self.data_groups = {'train': 'training',
-                            'test': 'testing',
-                            'val': 'validation'}
+                            'test': 'validation',
+                            'val': 'testing'}
 
         self.data_types = {'x': 'raw_data', 'y': 'gt'}
         self.args.data_dir = fcns.fix_path(self.args.data_dir)

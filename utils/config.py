@@ -37,12 +37,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument("--data_dir", type=str,
-                        # default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped2d_128",
-                        default="D:\\Data\\FairSIM\\cropped2d_128",
+                        default="D:\\Data\\FixedCell\\PFA_eGFP\\cropped3d_128_5",
+                        # default="D:\\Data\\FairSIM\\cropped2d_128",
                         help='The directory of the data')
-    parser.add_argument('--dataset', type=str, default='FairSIM',
+    parser.add_argument('--dataset', type=str, default='FixedCell',
                         help='FixedCell or FairSIM')
-    parser.add_argument('--dnn_type', type=str, default='UCAGAN',
+    parser.add_argument('--dnn_type', type=str, default='CAGAN',
                         choices=['CAGAN',
                                  'SRGAN',
                                  'UCAGAN',
@@ -57,16 +57,16 @@ def parse_args():
     parser.add_argument("--mae_loss", type=float, default=1)
     parser.add_argument("--mse_loss", type=float, default=0)
     parser.add_argument("--ssim_loss", type=float, default=0)
-    parser.add_argument("--alpha", type=float, default=0.25)  # gan_loss
+    parser.add_argument("--alpha", type=float, default=0.1)  # gan_loss
     parser.add_argument("--beta", type=float, default=0)  # weight_wf_loss
-    parser.add_argument("--gamma", type=float, default=0.15)  # weight_unrolling gamma
+    parser.add_argument("--gamma", type=float, default=0.5)  # weight_unrolling gamma
     parser.add_argument("--unrolling_iter", type=int, default=2,
                         choices=range(6))
 
     # Generator Setup
     parser.add_argument("--start_lr", type=float, default=1e-4)
     parser.add_argument("--lr_decay_factor", type=float, default=0.5)
-    parser.add_argument("--train_generator_times", type=int, default=5)
+    parser.add_argument("--train_generator_times", type=int, default=3)
     parser.add_argument("--opt", type=str, default="adam")
 
     # Discriminator Setup
@@ -75,23 +75,22 @@ def parse_args():
     parser.add_argument("--train_discriminator_times", type=int, default=1)
     parser.add_argument("--d_opt", type=str, default="adam")
 
-    default_iterations = 5000
+    default_iterations = 800
     parser.add_argument('--batch_size', type=int, default=2,
                         choices=range(2, 16),
                         help='The size of batch')
     parser.add_argument('--epoch', type=int,
                         default=default_iterations, help='The number of epochs to run')
     parser.add_argument("--sample_interval",
-                        type=int, default=int(1 + 10 * (np.log10(1 + default_iterations // 50))))
-    parser.add_argument("--validate_interval", type=int, default=5)
-    parser.add_argument("--validate_num", type=int, default=5)
+                        type=int, default=1)
+    parser.add_argument("--validate_interval", type=int, default=1)
+    parser.add_argument("--validate_num", type=int, default=1)
     parser.add_argument("--norm", type=str, default='prctile',
                         help='Image normalization Method.',
                         choices=['max',
                                 'min_max',
                                 'prctile'])
     parser.add_argument("--seed", type=int, default=12345)
-
 
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
                         help='Directory name to save the checkpoints')
@@ -114,6 +113,6 @@ def parse_args():
     parser.add_argument("--gpu_id", type=str, default="0")
     parser.add_argument("--gpu_memory_fraction", type=float, default=0.25)
     parser.add_argument("--model_weights", type=str,
-                        default="C:/Users/unrolled_caGAN/Desktop/Selected Results/Best UPIGAN/FixedCell_CAGAN_21-04-2023_time1159/weights_gen_best.h5")
+                        default="C:\\Users\\unrolled_caGAN\\Desktop\\Selected Results\\Best UPIGAN\\FixedCell_UCAGAN_21-04-2023_time1422\\weights_gen_best.h5")
 
     return check_args(parser.parse_args())
